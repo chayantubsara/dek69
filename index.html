@@ -179,7 +179,7 @@
                 
                 const response = await fetch(GAS_API_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // ใช้ text/plain เลี่ยง CORS
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
                 
@@ -310,18 +310,26 @@
         };
 
         window.submitAdminCreate = async function(type) {
-            if(type === 'user') {
-                var uid = document.getElementById('add-u-id').value; var name = document.getElementById('add-u-name').value; var pwd = document.getElementById('add-u-pwd').value; var role = document.getElementById('add-u-role').value;
-                if(!uid || !name || !pwd) return window.showModal({type:'warning', title:'เตือน', text:'กรอกให้ครบ'});
-                var res = await window.apiCall('adminCreateUser', {id: uid, name: name, password: pwd, role: role});
-                if(res.success) { window.showModal({type:'success', title:'สำเร็จ', text:res.message}); document.getElementById('admin-workspace').innerHTML=''; window.loadAdminData('users'); } else { window.showModal({type:'error', title:'ล้มเหลว', text:res.message}); }
-            } else {
-                var sid = document.getElementById('add-s-id').value; var sname = document.getElementById('add-s-name').value; var smaster = document.getElementById('add-s-master').value;
-                if(!sid || !sname) return window.showModal({type:'warning', title:'เตือน', text:'กรอกรหัสและชื่อฐาน'});
-                var res = await window.apiCall('adminCreateStation', {id: sid, name: sname, masterId: smaster});
-                if(res.success) { window.showModal({type:'success', title:'สำเร็จ', text:res.message}); document.getElementById('admin-workspace').innerHTML=''; window.loadAdminData('stations'); } else { window.showModal({type:'error', title:'ล้มเหลว', text:res.message}); }
-            }
-        };
+    if(type === 'user') {
+        var uid = document.getElementById('add-u-id').value; 
+        var name = document.getElementById('add-u-name').value; 
+        var pwd = document.getElementById('add-u-pwd').value; 
+        var role = document.getElementById('add-u-role').value;
+        if(!uid || !name || !pwd) return window.showModal({type:'warning', title:'เตือน', text:'กรอกข้อมูลให้ครบ'});
+        // แก้จาก req.id เป็นการส่ง object ที่ตรงกับหลังบ้าน
+        var res = await window.apiCall('adminCreateUser', {id: uid, name: name, password: pwd, role: role});
+        if(res.success) { window.showModal({type:'success', title:'สำเร็จ', text:res.message}); document.getElementById('admin-workspace').innerHTML=''; window.loadAdminData('users'); } 
+        else { window.showModal({type:'error', title:'ล้มเหลว', text:res.message}); }
+    } else {
+        var sid = document.getElementById('add-s-id').value; 
+        var sname = document.getElementById('add-s-name').value; 
+        var smaster = document.getElementById('add-s-master').value;
+        if(!sid || !sname) return window.showModal({type:'warning', title:'เตือน', text:'กรอกรหัสและชื่อฐาน'});
+        var res = await window.apiCall('adminCreateStation', {id: sid, name: sname, masterId: smaster});
+        if(res.success) { window.showModal({type:'success', title:'สำเร็จ', text:res.message}); document.getElementById('admin-workspace').innerHTML=''; window.loadAdminData('stations'); } 
+        else { window.showModal({type:'error', title:'ล้มเหลว', text:res.message}); }
+    }
+};
 
         window.submitAdminSetRoute = async function() {
             var gid = document.getElementById('route-g').value; var sid = document.getElementById('route-s').value;
