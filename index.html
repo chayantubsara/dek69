@@ -172,25 +172,28 @@
 
         // --- NEW API CALLER (REST API WITH FETCH) ---
         window.apiCall = async function(action, payload) {
-            window.showLoader(true);
-            payload.action = action;
-            try {
-                if (GAS_API_URL === "YOUR_WEB_APP_URL_HERE") throw new Error("คุณยังไม่ได้ใส่ URL ของ Google Apps Script ในไฟล์ HTML");
-                
-                const response = await fetch(GAS_API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                
-                const data = await response.json();
-                window.showLoader(false);
-                return data;
-            } catch (error) {
-                window.showLoader(false);
-                return { success: false, message: error.toString() };
-            }
-        };
+    window.showLoader(true);
+    payload.action = action;
+    
+    // สร้าง FormData เพื่อหลบ CORS
+    var data = new FormData();
+    data.append('data', JSON.stringify(payload));
+    
+    try {
+        // ใช้โหมด no-cors ไม่ได้เพราะเราต้องอ่านค่ากลับ ให้ใช้การส่งแบบ form แทน
+        const response = await fetch(GAS_API_URL, {
+            method: 'POST',
+            body: new URLSearchParams({ 'data': JSON.stringify(payload) }) 
+        });
+        
+        const resData = await response.json();
+        window.showLoader(false);
+        return resData;
+    } catch (error) {
+        window.showLoader(false);
+        return { success: false, message: 'Connection Error: ' + error.message };
+    }
+};
 
         window.auth = async function(type) {
             if(type === 'login') {
