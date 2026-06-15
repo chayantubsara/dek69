@@ -176,24 +176,28 @@
         window.showLoader(true);
         payload.action = action;
         
-        // ใช้ fetch ที่ส่งเป็น URLSearchParams (เหมือนการกด Submit Form)
-        // GAS จะมองว่าเป็น Form ปกติ และไม่มีวันติด CORS
-        fetch(GAS_API_URL, {
-            method: 'POST',
-            body: new URLSearchParams({ 'data': JSON.stringify(payload) })
-        })
-        .then(response => response.json())
-        .then(data => {
+        // สร้างชื่อฟังก์ชัน callback แบบสุ่ม
+        var callbackName = 'jsonp_' + Math.round(100000 * Math.random());
+        window[callbackName] = function(data) {
+            delete window[callbackName];
+            document.body.removeChild(script);
             window.showLoader(false);
             resolve(data);
-        })
-        .catch(error => {
-            window.showLoader(false);
-            console.error(error);
-            resolve({ success: false, message: 'Connection Error' });
-        });
-    });
-};
+        };
+        
+                        // สร้าง script tag ดึงข้อมูลจาก GAS
+                        var script = document.createElement('script');
+                        var url = GAS_API_URL + '?callback=' + callbackName + '&data=' + encodeURIComponent(JSON.stringify(payload));
+                        script.src = url;
+                        document.body.appendChild(script);
+                        
+                        // กันเหนียวกรณีโหลดไม่ติด
+                        script.onerror = function() {
+                            window.showLoader(false);
+                            reject({success: false, message: 'Connection Error'});
+                        };
+                    });
+                };
 
         window.auth = async function(type) {
             if(type === 'login') {
