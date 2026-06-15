@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Freshy 69 - กิจกรรมรับน้องใหม่</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script>
+        tailwind.config = { theme: { extend: { colors: { bgDark: '#0B0F19', surface: '#111827', primary: '#10B981', accent: '#3B82F6', textMuted: '#9CA3AF' }, fontFamily: { sans: ['Sarabun', 'sans-serif'] } } } }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap');
+        body { font-family: 'Sarabun', sans-serif; background-color: #0B0F19; color: #F3F4F6; } 
+        .fade-in { animation: fadeIn 0.3s ease-in-out; } @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .glass-panel { background: rgba(17, 24, 39, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(16, 185, 129, 0.2); }
+        .input-dark { background: rgba(0,0,0,0.3); border: 1px solid #374151; color: #fff; transition: all 0.3s; }
+        .input-dark:focus { border-color: #10B981; outline: none; box-shadow: 0 0 10px rgba(16, 185, 129, 0.2); }
+        ::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="antialiased h-screen flex flex-col items-center justify-center overflow-hidden">
+
+    <div id="loader" class="fixed inset-0 bg-bgDark/90 backdrop-blur-md z-[200] flex flex-col items-center justify-center hidden">
+        <div class="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+        <p class="text-primary font-bold mt-4 tracking-widest uppercase text-sm">Processing...</p>
+    </div>
+
+    <div id="custom-modal" class="fixed inset-0 z-[150] hidden flex items-center justify-center px-4">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="window.closeModal()"></div>
+        <div id="modal-box" class="glass-panel rounded-2xl w-full max-w-sm p-6 relative z-10 fade-in border-t-4 border-t-primary shadow-[0_0_30px_rgba(16,185,129,0.15)]">
+            <h3 id="modal-title" class="text-xl font-bold text-white mb-2 flex items-center"><i id="modal-icon" class="mr-2"></i><span></span></h3>
+            <p id="modal-text" class="text-sm text-textMuted mb-6"></p>
+            <div class="flex gap-3 justify-end" id="modal-buttons">
+                <button id="btn-modal-cancel" class="hidden px-4 py-2 bg-gray-800 text-white rounded-lg font-bold" onclick="window.closeModal()">ยกเลิก</button>
+                <button id="btn-modal-confirm" class="px-5 py-2 bg-primary hover:bg-emerald-500 text-white rounded-lg font-bold transition-all shadow-[0_0_15px_rgba(16,185,129,0.4)]" onclick="window.confirmModal()">รับทราบ</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="qr-modal" class="fixed inset-0 z-[140] hidden flex items-center justify-center px-4">
+        <div class="absolute inset-0 bg-black/90 backdrop-blur-sm" onclick="window.closeQrModal()"></div>
+        <div class="glass-panel rounded-3xl w-full max-w-xs p-8 relative z-10 fade-in text-center flex flex-col items-center">
+            <h3 class="text-lg font-bold text-white mb-1" id="qr-title">สแกนเพื่อเข้าร่วม</h3>
+            <p class="text-xs text-emerald-400 mb-6">ให้น้องเปิดแอปแล้วใช้กล้องสแกน</p>
+            <div class="bg-white p-3 rounded-xl mb-6 shadow-[0_0_20px_rgba(16,185,129,0.3)]"><img id="qr-image" src="" class="w-48 h-48"></div>
+            <button onclick="window.closeQrModal()" class="w-full py-3 bg-gray-800 rounded-xl text-sm font-bold hover:bg-gray-700">ปิดหน้าต่าง</button>
+        </div>
+    </div>
+
+    <div id="view-auth" class="w-full h-full max-w-md flex flex-col justify-center p-6 fade-in relative">
+        <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/20 via-bgDark to-bgDark -z-10"></div>
+        <div class="text-center mb-8">
+            <i class="fas fa-fingerprint text-5xl text-primary mb-4 drop-shadow-[0_0_15px_rgba(16,185,129,0.5)]"></i>
+            <h1 class="text-3xl font-extrabold text-white tracking-wider">FRESHY <span class="text-primary">69</span></h1>
+            <p class="text-textMuted text-xs tracking-widest uppercase mt-2">Authentication System</p>
+        </div>
+
+        <div id="form-login" class="space-y-4 fade-in">
+            <input type="text" id="login-id" placeholder="รหัสนักศึกษา / รหัสผู้ใช้" class="input-dark w-full px-4 py-3.5 rounded-xl text-sm">
+            <input type="password" id="login-pwd" placeholder="รหัสผ่าน" class="input-dark w-full px-4 py-3.5 rounded-xl text-sm">
+            <button onclick="window.auth('login')" class="w-full bg-primary hover:bg-emerald-500 text-white py-3.5 rounded-xl font-bold shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all">ACCESS GRANTED <i class="fas fa-chevron-right ml-1 text-xs"></i></button>
+            <div class="flex justify-between text-xs text-textMuted pt-4 px-2">
+                <button onclick="window.switchAuth('register')" class="hover:text-primary">สร้างบัญชีใหม่</button>
+                <button onclick="window.switchAuth('forgot')" class="hover:text-primary">ลืมรหัสผ่าน?</button>
+            </div>
+        </div>
+
+        <div id="form-register" class="space-y-4 hidden fade-in">
+            <input type="text" id="reg-id" placeholder="รหัสนักศึกษา (เช่น 6620901001)" class="input-dark w-full px-4 py-3 rounded-xl text-sm">
+            <input type="text" id="reg-name" placeholder="ชื่อ - นามสกุล" class="input-dark w-full px-4 py-3 rounded-xl text-sm">
+            <input type="email" id="reg-email" placeholder="อีเมล (สำหรับกู้รหัสผ่าน)" class="input-dark w-full px-4 py-3 rounded-xl text-sm">
+            <input type="password" id="reg-pwd" placeholder="ตั้งรหัสผ่าน" class="input-dark w-full px-4 py-3 rounded-xl text-sm">
+            <button onclick="window.auth('register')" class="w-full bg-accent hover:bg-blue-500 text-white py-3.5 rounded-xl font-bold shadow-[0_0_15px_rgba(59,130,246,0.3)]">INITIALIZE ACCOUNT</button>
+            <div class="text-center text-xs pt-2"><button onclick="window.switchAuth('login')" class="text-textMuted hover:text-white">กลับไปหน้าล็อกอิน</button></div>
+        </div>
+
+        <div id="form-forgot" class="space-y-4 hidden fade-in">
+            <p class="text-xs text-emerald-400 text-center mb-2">ระบบจะส่ง OTP 6 หลักไปยังอีเมลของคุณ</p>
+            <input type="text" id="fgt-id" placeholder="รหัสนักศึกษา" class="input-dark w-full px-4 py-3 rounded-xl text-sm">
+            <input type="email" id="fgt-email" placeholder="อีเมลที่ลงทะเบียนไว้" class="input-dark w-full px-4 py-3 rounded-xl text-sm">
+            <button onclick="window.requestOtp()" class="w-full bg-gray-700 hover:bg-gray-600 text-white py-3.5 rounded-xl font-bold">SEND OTP</button>
+            
+            <div id="box-otp" class="hidden space-y-4 pt-4 border-t border-gray-800">
+                <input type="text" id="fgt-otp" placeholder="รหัส OTP 6 หลัก" class="input-dark w-full px-4 py-3 rounded-xl text-sm text-center tracking-widest font-mono text-lg text-emerald-400">
+                <input type="password" id="fgt-newpwd" placeholder="ตั้งรหัสผ่านใหม่" class="input-dark w-full px-4 py-3 rounded-xl text-sm">
+                <button onclick="window.resetPwd()" class="w-full bg-primary hover:bg-emerald-500 text-white py-3.5 rounded-xl font-bold shadow-[0_0_15px_rgba(16,185,129,0.3)]">RESET PASSWORD</button>
+            </div>
+            <div class="text-center text-xs pt-2"><button onclick="window.switchAuth('login')" class="text-textMuted hover:text-white">ยกเลิก</button></div>
+        </div>
+    </div>
+
+    <div id="view-dashboard" class="w-full h-full max-w-md bg-bgDark flex flex-col hidden fade-in">
+        <div class="glass-panel px-5 py-4 flex justify-between items-center z-10 sticky top-0 border-b border-gray-800">
+            <div>
+                <p id="dash-role" class="text-[10px] text-primary font-bold uppercase tracking-widest">ROLE</p>
+                <h2 id="dash-name" class="text-base font-bold text-white truncate w-48">NAME</h2>
+            </div>
+            <button onclick="window.logout()" class="w-8 h-8 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center hover:bg-red-500/40"><i class="fas fa-sign-out-alt text-sm"></i></button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto w-full p-4 pb-24 space-y-4" id="dash-content"></div>
+        
+        <div class="glass-panel h-[72px] flex justify-around items-center fixed bottom-0 w-full max-w-md z-50 border-t border-gray-800 pb-safe">
+            <button onclick="window.loadDashboard()" class="text-primary flex flex-col items-center"><i class="fas fa-home text-xl mb-1"></i><span class="text-[9px] font-bold uppercase tracking-wider">Home</span></button>
+            
+            <div class="relative -top-6">
+                <button id="btn-main-action" onclick="window.triggerMainAction()" class="w-16 h-16 bg-primary rounded-full text-bgDark flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.4)] border-4 border-bgDark transform hover:scale-105 transition-transform">
+                    <i id="icon-main-action" class="fas fa-qrcode text-2xl"></i>
+                </button>
+            </div>
+            
+            <button onclick="window.showModal({type:'info', title:'ระบบ', text:'คุณใช้งานในสิทธิ์: '+window.currentUser.role})" class="text-textMuted hover:text-white flex flex-col items-center"><i class="fas fa-user text-xl mb-1"></i><span class="text-[9px] font-bold uppercase tracking-wider">Profile</span></button>
+        </div>
+    </div>
+
+    <div id="modal-scanner" class="fixed inset-0 bg-bgDark/95 z-[160] flex flex-col hidden fade-in backdrop-blur-sm">
+        <div class="flex justify-between items-center p-5 text-white border-b border-gray-800">
+            <h2 class="font-bold tracking-widest text-sm text-primary uppercase"><i class="fas fa-crosshairs mr-2"></i>Scanner</h2>
+            <button onclick="window.closeScanner()" class="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="flex-1 flex flex-col items-center justify-center px-4">
+            <div class="relative w-full max-w-sm">
+                <div class="absolute -inset-1 border-2 border-primary/30 rounded-3xl pointer-events-none"></div>
+                <div class="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-primary rounded-tl-2xl z-10 pointer-events-none"></div>
+                <div class="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-primary rounded-tr-2xl z-10 pointer-events-none"></div>
+                <div class="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-primary rounded-bl-2xl z-10 pointer-events-none"></div>
+                <div class="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-primary rounded-br-2xl z-10 pointer-events-none"></div>
+                <div id="reader" class="w-full rounded-2xl bg-black overflow-hidden min-h-[300px]"></div>
+            </div>
+            <div id="scanner-status" class="text-textMuted mt-8 text-sm text-center">SCAN TARGET ACQUIRED</div>
+        </div>
+    </div>
+
+    <script>
+        // ===============================================
+        // นำ URL ของ Web App (ที่ได้จาก GAS) มาวางตรงนี้!
+        // ===============================================
+        const GAS_API_URL = "YOUR_WEB_APP_URL_HERE"; 
+
+        window.currentUser = null; window.html5QrCode = null; window.modalConfirmCallback = null; window.myStationId = null;
+
+        window.showModal = function(opts) {
+            var m = document.getElementById('custom-modal');
+            document.getElementById('modal-title').querySelector('span').innerText = opts.title || '';
+            document.getElementById('modal-text').innerText = opts.text || '';
+            var icon = document.getElementById('modal-icon');
+            if(opts.type === 'error') { icon.className = 'fas fa-times-circle text-red-500'; document.getElementById('modal-title').className = 'text-xl font-bold text-red-500 mb-2 flex items-center'; }
+            else if(opts.type === 'warning') { icon.className = 'fas fa-exclamation-triangle text-amber-500'; document.getElementById('modal-title').className = 'text-xl font-bold text-amber-500 mb-2 flex items-center'; }
+            else { icon.className = 'fas fa-check-circle text-primary'; document.getElementById('modal-title').className = 'text-xl font-bold text-primary mb-2 flex items-center'; }
+            
+            if(opts.isConfirm) { document.getElementById('btn-modal-cancel').classList.remove('hidden'); window.modalConfirmCallback = opts.onConfirm; } 
+            else { document.getElementById('btn-modal-cancel').classList.add('hidden'); window.modalConfirmCallback = null; }
+            m.classList.remove('hidden');
+        };
+        window.closeModal = function() { document.getElementById('custom-modal').classList.add('hidden'); };
+        window.confirmModal = function() { window.closeModal(); if(window.modalConfirmCallback) window.modalConfirmCallback(); };
+        window.showLoader = function(show) { document.getElementById('loader').style.display = show ? 'flex' : 'none'; };
+        
+        window.switchAuth = function(tab) {
+            document.getElementById('form-login').classList.add('hidden'); document.getElementById('form-register').classList.add('hidden'); document.getElementById('form-forgot').classList.add('hidden');
+            document.getElementById('form-' + tab).classList.remove('hidden');
+        };
+
+        window.generateQR = function(payloadObj, title) {
+            document.getElementById('qr-title').innerText = title;
+            document.getElementById('qr-image').src = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" + encodeURIComponent(JSON.stringify(payloadObj)) + "&margin=10";
+            document.getElementById('qr-modal').classList.remove('hidden');
+        };
+        window.closeQrModal = function() { document.getElementById('qr-modal').classList.add('hidden'); };
+
+        // --- NEW API CALLER (REST API WITH FETCH) ---
+        window.apiCall = async function(action, payload) {
+            window.showLoader(true);
+            payload.action = action;
+            try {
+                if (GAS_API_URL === "YOUR_WEB_APP_URL_HERE") throw new Error("คุณยังไม่ได้ใส่ URL ของ Google Apps Script ในไฟล์ HTML");
+                
+                const response = await fetch(GAS_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // ใช้ text/plain เลี่ยง CORS
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                window.showLoader(false);
+                return data;
+            } catch (error) {
+                window.showLoader(false);
+                return { success: false, message: error.toString() };
+            }
+        };
+
+        window.auth = async function(type) {
+            if(type === 'login') {
+                var sid = document.getElementById('login-id').value; var pwd = document.getElementById('login-pwd').value;
+                if(!sid || !pwd) return window.showModal({type:'warning', title:'SYSTEM', text:'กรุณากรอกข้อมูลให้ครบ'});
+                var res = await window.apiCall('login', {studentId: sid, password: pwd});
+                if(res.success) { window.currentUser = res.user; window.initApp(); } else window.showModal({type:'error', title:'DENIED', text:res.message});
+            } else {
+                var sid2 = document.getElementById('reg-id').value; var name = document.getElementById('reg-name').value; var email = document.getElementById('reg-email').value; var pwd2 = document.getElementById('reg-pwd').value;
+                if(!sid2 || !name || !pwd2 || !email) return window.showModal({type:'warning', title:'SYSTEM', text:'กรุณากรอกข้อมูลให้ครบ'});
+                var res2 = await window.apiCall('register', {studentId: sid2, name: name, email: email, password: pwd2});
+                if(res2.success) { window.showModal({type:'success', title:'SUCCESS', text:res2.message, isConfirm:true, onConfirm:function(){window.switchAuth('login');}}); } else window.showModal({type:'error', title:'DENIED', text:res2.message});
+            }
+        };
+
+        window.requestOtp = async function() {
+            var sid = document.getElementById('fgt-id').value; var email = document.getElementById('fgt-email').value;
+            if(!sid || !email) return window.showModal({type:'warning', title:'SYSTEM', text:'กรอกรหัสและอีเมล'});
+            var res = await window.apiCall('requestOtp', {studentId: sid, email: email});
+            if(res.success) { document.getElementById('box-otp').classList.remove('hidden'); window.showModal({type:'success', title:'SENT', text:res.message}); } 
+            else { window.showModal({type:'error', title:'FAILED', text:res.message}); }
+        };
+
+        window.resetPwd = async function() {
+            var sid = document.getElementById('fgt-id').value; var otp = document.getElementById('fgt-otp').value; var pwd = document.getElementById('fgt-newpwd').value;
+            if(!otp || !pwd) return window.showModal({type:'warning', title:'SYSTEM', text:'กรอก OTP และรหัสใหม่'});
+            var res = await window.apiCall('resetPwd', {studentId: sid, otp: otp, newPassword: pwd});
+            if(res.success) { window.showModal({type:'success', title:'SUCCESS', text:res.message, isConfirm:true, onConfirm:function(){window.switchAuth('login');}}); document.getElementById('box-otp').classList.add('hidden'); } 
+            else { window.showModal({type:'error', title:'FAILED', text:res.message}); }
+        };
+
+        window.logout = function() { window.currentUser = null; document.getElementById('view-dashboard').classList.add('hidden'); document.getElementById('view-auth').classList.remove('hidden'); };
+
+        window.initApp = function() {
+            document.getElementById('view-auth').classList.add('hidden'); document.getElementById('view-dashboard').classList.remove('hidden');
+            document.getElementById('dash-role').innerText = window.currentUser.role; document.getElementById('dash-name').innerText = window.currentUser.name;
+            var icon = document.getElementById('icon-main-action');
+            if(window.currentUser.role === 'student') { icon.className = "fas fa-camera text-2xl"; } else if(window.currentUser.role === 'admin') { icon.className = "fas fa-cogs text-2xl"; } else { icon.className = "fas fa-qrcode text-2xl"; }
+            window.loadDashboard();
+        };
+
+        window.triggerMainAction = function() {
+            if(window.currentUser.role === 'student') { window.startScanner(); }
+            else if(window.currentUser.role === 'mentor') { window.generateQR({t:'join', g:window.currentUser.groupId}, 'สแกนเพื่อเข้ากลุ่ม'); }
+            else if(window.currentUser.role === 'station_master') { window.generateQR({t:'station', s:(window.myStationId||"none")}, 'สแกนเพื่อยืนยันผ่านฐาน'); }
+            else { window.showModal({type:'info', title:'ADMIN', text:'โหมดจัดการข้อมูล (ไม่มีการใช้กล้อง)'}); }
+        };
+
+        window.loadDashboard = async function() {
+            var content = document.getElementById('dash-content');
+            content.innerHTML = '<div class="text-center text-textMuted mt-10"><i class="fas fa-circle-notch fa-spin text-3xl mb-3 text-primary"></i><p class="text-xs tracking-widest">FETCHING DATA...</p></div>';
+            var res = await window.apiCall('getDashboard', {studentId: window.currentUser.studentId});
+            if(!res.success) return content.innerHTML = '<p class="text-red-500 text-center mt-10">' + res.message + '</p>';
+            
+            var d = res.data;
+            if(d.role === 'student') {
+                var gName = d.group ? d.group.name : '<span class="text-red-400">ยังไม่มีกลุ่ม</span>';
+                var gScore = d.group ? d.group.score : 0;
+                var gLoc = d.group ? (d.group.currentStationName || d.group.currentStationId || 'จุดเริ่มต้น') : '-';
+                
+                var html = '<div class="glass-panel p-5 rounded-2xl"><p class="text-xs text-textMuted mb-1">สังกัดปัจจุบัน</p><h3 class="text-xl font-bold text-primary mb-4">' + gName + '</h3>' +
+                '<div class="flex justify-between border-t border-gray-800 pt-4"><div><p class="text-[10px] text-textMuted uppercase tracking-wider">Score</p><p class="text-xl font-mono text-white">' + gScore + ' PTS</p></div>' +
+                '<div class="text-right"><p class="text-[10px] text-textMuted uppercase tracking-wider">Current Station</p><p class="text-sm text-emerald-400 font-bold">' + gLoc + '</p></div></div></div>' +
+                '<h4 class="text-xs text-textMuted font-bold uppercase tracking-widest mt-6 mb-3 px-1"><i class="fas fa-history mr-2"></i>Mission History</h4><div class="space-y-2">';
+                if(d.group && d.completedNames && d.completedNames.length > 0) { d.completedNames.forEach(function(n) { html += '<div class="glass-panel p-3 rounded-xl border-l-2 border-l-primary flex items-center"><i class="fas fa-check-circle text-primary mr-3"></i><p class="text-sm">' + n + '</p></div>'; }); } else { html += '<div class="text-center text-xs text-gray-600 py-4">NO RECORDS</div>'; }
+                content.innerHTML = html + '</div>';
+            } 
+            else if(d.role === 'mentor') {
+                var html = '<div class="glass-panel p-5 rounded-2xl mb-4 border-l-2 border-l-accent"><p class="text-xs text-textMuted mb-1">บริหารจัดการกลุ่ม</p><h3 class="text-xl font-bold text-accent">' + (d.group ? d.group.name : '<span class="text-red-400">ยังไม่ระบุกลุ่ม</span>') + '</h3>' +
+                '<p class="text-sm mt-2"><span class="text-textMuted">คะแนน:</span> <span class="font-mono text-white">' + (d.group ? d.group.score : 0) + '</span></p></div>' +
+                '<h4 class="text-xs text-textMuted font-bold uppercase tracking-widest mt-4 mb-3 px-1"><i class="fas fa-users mr-2"></i>Members (' + (d.students ? d.students.length : 0) + ')</h4><div class="space-y-2">';
+                if(d.students && d.students.length > 0) { d.students.forEach(function(s) { html += '<div class="glass-panel p-3 rounded-xl flex justify-between"><span class="text-sm font-bold">' + s.id + '</span><span class="text-xs text-textMuted">' + s.name + '</span></div>'; }); } else { html += '<div class="text-center text-xs text-gray-600 py-4">NO MEMBERS</div>'; }
+                content.innerHTML = html + '</div>';
+            }
+            else if(d.role === 'station_master') {
+                window.myStationId = d.station ? d.station.id : null;
+                var html = '<div class="glass-panel p-5 rounded-2xl mb-4 border-l-2 border-l-amber-500"><p class="text-xs text-textMuted mb-1">ประจำการฐาน</p><h3 class="text-xl font-bold text-amber-500">' + (d.station ? d.station.name : '<span class="text-red-400">ยังไม่ได้ผูกฐาน</span>') + '</h3></div>' +
+                '<h4 class="text-xs text-textMuted font-bold uppercase tracking-widest mt-4 mb-3 px-1"><i class="fas fa-list-alt mr-2"></i>Passed Groups</h4><div class="space-y-2">';
+                if(d.history && d.history.length > 0) { d.history.forEach(function(h) { html += '<div class="glass-panel p-3 rounded-xl flex justify-between items-center"><div><p class="text-sm font-bold text-white">' + h.groupName + '</p><p class="text-[10px] text-textMuted">' + new Date(h.ts).toLocaleTimeString('th-TH') + '</p></div><span class="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded">+10 PTS</span></div>'; }); } else { html += '<div class="text-center text-xs text-gray-600 py-4">NO GROUPS YET</div>'; }
+                content.innerHTML = html + '</div>';
+            }
+            else if(d.role === 'admin') {
+                content.innerHTML = '<div class="glass-panel p-4 rounded-xl mb-4"><h3 class="font-bold text-white mb-3"><i class="fas fa-cogs text-emerald-500 mr-2"></i> เมนูจัดการระบบ</h3>' +
+                '<div class="grid grid-cols-2 gap-2 mb-4">' +
+                '<button onclick="window.showAdminUI(\'createUser\')" class="bg-emerald-500/20 text-emerald-400 py-2 rounded-lg font-bold border border-emerald-500/30 text-sm"><i class="fas fa-user-plus mr-1"></i> สร้างผู้ใช้</button>' +
+                '<button onclick="window.showAdminUI(\'createStation\')" class="bg-amber-500/20 text-amber-400 py-2 rounded-lg font-bold border border-amber-500/30 text-sm"><i class="fas fa-map-pin mr-1"></i> สร้างฐาน</button>' +
+                '<button onclick="window.showAdminUI(\'setRoute\')" class="bg-accent/20 text-blue-400 py-2 rounded-lg font-bold border border-accent/30 text-sm col-span-2"><i class="fas fa-route mr-1"></i> กำหนดฐานให้กลุ่ม</button>' +
+                '<button onclick="window.loadAdminData(\'users\')" class="bg-gray-800 text-gray-300 py-2 rounded-lg font-bold text-sm"><i class="fas fa-users mr-1"></i> ดูผู้ใช้</button>' +
+                '<button onclick="window.loadAdminData(\'stations\')" class="bg-gray-800 text-gray-300 py-2 rounded-lg font-bold text-sm"><i class="fas fa-list mr-1"></i> ดูฐาน</button></div>' +
+                '<div id="admin-workspace"></div></div><div id="admin-view"></div>';
+            }
+        };
+
+        window.showAdminUI = async function(type) {
+            var space = document.getElementById('admin-workspace'); document.getElementById('admin-view').innerHTML = '';
+            if(type === 'createUser') {
+                space.innerHTML = '<div class="border-t border-gray-700 pt-4 space-y-3 fade-in"><h4 class="font-bold text-emerald-400">ฟอร์มสร้างผู้ใช้ใหม่</h4>' +
+                '<input type="text" id="add-u-id" placeholder="รหัสผู้ใช้" class="input-dark w-full p-2 rounded-lg text-sm"><input type="text" id="add-u-name" placeholder="ชื่อ-สกุล" class="input-dark w-full p-2 rounded-lg text-sm">' +
+                '<input type="password" id="add-u-pwd" placeholder="ตั้งรหัสผ่าน" class="input-dark w-full p-2 rounded-lg text-sm"><select id="add-u-role" class="input-dark w-full p-2 rounded-lg text-sm"><option value="student">นักเรียน</option><option value="station_master">พี่ฐาน</option><option value="mentor">พี่เลี้ยง</option><option value="admin">แอดมิน</option></select>' +
+                '<button onclick="window.submitAdminCreate(\'user\')" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 rounded-lg">บันทึกข้อมูล</button></div>';
+            } else if(type === 'createStation') {
+                space.innerHTML = '<div class="border-t border-gray-700 pt-4 space-y-3 fade-in"><h4 class="font-bold text-amber-400">ฟอร์มสร้างฐานกิจกรรม</h4>' +
+                '<input type="text" id="add-s-id" placeholder="รหัสฐาน (เช่น station_02)" class="input-dark w-full p-2 rounded-lg text-sm"><input type="text" id="add-s-name" placeholder="ชื่อฐาน" class="input-dark w-full p-2 rounded-lg text-sm"><input type="text" id="add-s-master" placeholder="รหัสพี่ฐาน (ไม่บังคับ)" class="input-dark w-full p-2 rounded-lg text-sm">' +
+                '<button onclick="window.submitAdminCreate(\'station\')" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 rounded-lg">บันทึกข้อมูล</button></div>';
+            } else if(type === 'setRoute') {
+                space.innerHTML = '<p class="text-center text-accent mt-4"><i class="fas fa-spinner fa-spin"></i> Loading Data...</p>';
+                var res = await window.apiCall('adminList', {});
+                if(res.success) {
+                    var gOpts = res.groups.map(function(g){return '<option value="'+g.id+'">'+g.name+'</option>';}).join('');
+                    var sOpts = '<option value="">-- ไม่ระบุ / จุดเริ่มต้น --</option>' + res.stations.map(function(s){return '<option value="'+s.id+'">'+s.name+'</option>';}).join('');
+                    space.innerHTML = '<div class="border-t border-gray-700 pt-4 space-y-3 fade-in"><h4 class="font-bold text-accent">ตั้งค่าฐานปัจจุบันของกลุ่ม</h4>' +
+                    '<select id="route-g" class="input-dark w-full p-2 rounded-lg text-sm">' + gOpts + '</select>' +
+                    '<select id="route-s" class="input-dark w-full p-2 rounded-lg text-sm">' + sOpts + '</select>' +
+                    '<button onclick="window.submitAdminSetRoute()" class="w-full bg-accent hover:bg-blue-600 text-white font-bold py-2 rounded-lg">บันทึกตำแหน่ง</button></div>';
+                }
+            }
+        };
+
+        window.submitAdminCreate = async function(type) {
+            if(type === 'user') {
+                var uid = document.getElementById('add-u-id').value; var name = document.getElementById('add-u-name').value; var pwd = document.getElementById('add-u-pwd').value; var role = document.getElementById('add-u-role').value;
+                if(!uid || !name || !pwd) return window.showModal({type:'warning', title:'เตือน', text:'กรอกให้ครบ'});
+                var res = await window.apiCall('adminCreateUser', {id: uid, name: name, password: pwd, role: role});
+                if(res.success) { window.showModal({type:'success', title:'สำเร็จ', text:res.message}); document.getElementById('admin-workspace').innerHTML=''; window.loadAdminData('users'); } else { window.showModal({type:'error', title:'ล้มเหลว', text:res.message}); }
+            } else {
+                var sid = document.getElementById('add-s-id').value; var sname = document.getElementById('add-s-name').value; var smaster = document.getElementById('add-s-master').value;
+                if(!sid || !sname) return window.showModal({type:'warning', title:'เตือน', text:'กรอกรหัสและชื่อฐาน'});
+                var res = await window.apiCall('adminCreateStation', {id: sid, name: sname, masterId: smaster});
+                if(res.success) { window.showModal({type:'success', title:'สำเร็จ', text:res.message}); document.getElementById('admin-workspace').innerHTML=''; window.loadAdminData('stations'); } else { window.showModal({type:'error', title:'ล้มเหลว', text:res.message}); }
+            }
+        };
+
+        window.submitAdminSetRoute = async function() {
+            var gid = document.getElementById('route-g').value; var sid = document.getElementById('route-s').value;
+            if(!gid) return window.showModal({type:'warning', title:'เตือน', text:'กรุณาเลือกกลุ่ม'});
+            var res = await window.apiCall('adminSetGroupStation', {groupId: gid, stationId: sid});
+            if(res.success) { window.showModal({type:'success', title:'สำเร็จ', text:res.message}); document.getElementById('admin-workspace').innerHTML=''; } 
+            else { window.showModal({type:'error', title:'ล้มเหลว', text:res.message}); }
+        };
+
+        window.loadAdminData = async function(target) {
+            var v = document.getElementById('admin-view'); document.getElementById('admin-workspace').innerHTML = '';
+            v.innerHTML = '<p class="text-center text-xs text-primary"><i class="fas fa-spinner fa-spin"></i> FETCHING...</p>';
+            var res = await window.apiCall('adminList', {});
+            if(res.success) {
+                var html = '';
+                if(target === 'users') {
+                    html += '<h4 class="text-xs text-textMuted font-bold uppercase tracking-widest mb-2 mt-2 px-1 border-b border-gray-800 pb-2">User Database</h4><div class="space-y-2">';
+                    res.users.forEach(function(u) { html += '<div class="glass-panel p-2 rounded-lg flex justify-between items-center"><div><p class="text-sm font-bold text-gray-300">' + u.studentId + '</p><p class="text-[10px] text-gray-500">' + u.name + '</p></div><span class="text-[9px] uppercase px-2 py-1 rounded bg-gray-800 text-' + (u.role==='admin'?'red-400':'primary') + '">' + u.role + '</span></div>'; });
+                } else if(target === 'stations') {
+                    html += '<h4 class="text-xs text-textMuted font-bold uppercase tracking-widest mb-2 mt-2 px-1 border-b border-gray-800 pb-2">Stations Overview</h4><div class="space-y-2">';
+                    res.stations.forEach(function(s) { html += '<div class="glass-panel p-2 rounded-lg flex justify-between"><p class="text-sm font-bold text-gray-300">' + s.name + '</p><p class="text-xs text-amber-500">' + (s.masterId || '-') + '</p></div>'; });
+                }
+                v.innerHTML = html + '</div>';
+            } else { v.innerHTML = '<p class="text-red-500 text-xs">' + res.message + '</p>'; }
+        };
+
+        // --- CAMERA SCANNER LOGIC ---
+        window.startScanner = async function() {
+            document.getElementById('modal-scanner').classList.remove('hidden');
+            var st = document.getElementById('scanner-status'); 
+            st.innerHTML = '<i class="fas fa-circle-notch fa-spin text-primary mr-2"></i> REQUESTING PERMISSION...';
+            
+            try {
+                // บังคับขอสิทธิ์กล้อง ถ้าผ่านจะวิ่งไปเปิดเครื่องสแกนตามปกติ
+                var stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                stream.getTracks().forEach(function(track) { track.stop(); });
+                if(window.html5QrCode && window.html5QrCode.getState() === 2) { window.html5QrCode.stop().then(window.initScanner).catch(console.error); } else { if(window.html5QrCode) window.html5QrCode.clear(); window.initScanner(); }
+            } catch (err) {
+                // ถ้าโดนปฏิเสธ หรือไม่ได้รันบน HTTPS
+                window.showFallbackCameraUI();
+            }
+        };
+
+        window.initScanner = function() {
+            var st = document.getElementById('scanner-status'); window.html5QrCode = new Html5Qrcode("reader");
+            window.html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: {width: 250, height: 250} }, 
+                async function(text) { 
+                    window.closeScanner(); window.showLoader(true);
+                    var res = await window.apiCall('processScan', { studentId: window.currentUser.studentId, qrData: text }); 
+                    window.showLoader(false);
+                    if(res.success) { window.showModal({type:'success', title:'SYSTEM', text:res.message, isConfirm:true, onConfirm:function(){window.loadDashboard();}}); } 
+                    else { window.showModal({type:'error', title:'DENIED', text:res.message}); }
+                }, function(err) {}
+            ).then(function() { st.innerText = "ALIGN QR CODE WITHIN FRAME"; }).catch(function(e) { window.showFallbackCameraUI(); });
+        };
+
+        window.showFallbackCameraUI = function() {
+            document.getElementById('scanner-status').innerHTML = 
+            '<div class="bg-surface/90 p-4 rounded-xl border border-gray-700 w-full text-left space-y-3 mt-4 shadow-lg">' +
+                '<p class="text-red-400 font-bold text-sm text-center border-b border-gray-700 pb-2"><i class="fas fa-video-slash mr-1"></i> เบราว์เซอร์บล็อกการเปิดกล้อง</p>' +
+                '<p class="text-xs text-gray-300"><b>💡 ทางเลือก: ถ่ายรูปแทน</b><br>ระบบจะเปิดแอปกล้องในเครื่องให้ถ่ายรูป QR แทนครับ</p>' +
+                '<label class="flex justify-center items-center bg-primary hover:bg-emerald-500 px-4 py-3 rounded-lg text-bgDark cursor-pointer text-sm font-bold shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all">' +
+                    '<i class="fas fa-camera mr-2 text-lg"></i> กดถ่ายรูป QR Code<input type="file" accept="image/*" capture="environment" class="hidden" onchange="window.scanFromFile(event)">' +
+                '</label>' +
+            '</div>';
+        };
+
+        window.scanFromFile = function(e) {
+            if(e.target.files.length === 0) return; window.showLoader(true);
+            window.html5QrCode.scanFile(e.target.files[0], true).then(async function(text) { 
+                window.closeScanner(); var res = await window.apiCall('processScan', { studentId: window.currentUser.studentId, qrData: text }); window.showLoader(false);
+                if(res.success) { window.showModal({type:'success', title:'SYSTEM', text:res.message, isConfirm:true, onConfirm:function(){window.loadDashboard();}}); } 
+                else { window.showModal({type:'error', title:'DENIED', text:res.message}); }
+            }).catch(function(err) { window.showLoader(false); window.showModal({ type: 'error', title: 'FAILED', text: 'ไม่พบ QR Code ในรูปภาพ กรุณาถ่ายใหม่ให้ชัดเจน' }); });
+        };
+
+        window.closeScanner = function() {
+            document.getElementById('modal-scanner').classList.add('hidden');
+            if (window.html5QrCode) { if(window.html5QrCode.getState() === 2) { window.html5QrCode.stop().then(function(){ window.html5QrCode.clear(); window.html5QrCode=null; }); } else { window.html5QrCode.clear(); window.html5QrCode=null; } }
+        };
+    </script>
+</body>
+</html>
