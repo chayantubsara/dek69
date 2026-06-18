@@ -1,422 +1,1491 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Freshy 69 - กิจกรรมรับน้องใหม่</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-    <script>
-        tailwind.config = { theme: { extend: { colors: { bgDark: '#0B0F19', surface: '#111827', primary: '#10B981', accent: '#3B82F6', textMuted: '#9CA3AF' }, fontFamily: { sans: ['Sarabun', 'sans-serif'] } } } }
-    </script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap');
-        body { font-family: 'Sarabun', sans-serif; background-color: #0B0F19; color: #F3F4F6; } 
-        .fade-in { animation: fadeIn 0.3s ease-in-out; } @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        .glass-panel { background: rgba(17, 24, 39, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(16, 185, 129, 0.2); }
-        .input-dark { background: rgba(0,0,0,0.3); border: 1px solid #374151; color: #fff; transition: all 0.3s; }
-        .input-dark:focus { border-color: #10B981; outline: none; box-shadow: 0 0 10px rgba(16, 185, 129, 0.2); }
-        ::-webkit-scrollbar { display: none; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🏕️ Freshy In '69 — ระบบเกมรับน้อง</title>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+<style>
+/* ========================
+   DESIGN TOKENS
+   ======================== */
+:root {
+  --bg:       #0d0f1a;
+  --surface:  #141726;
+  --card:     #1c2035;
+  --border:   #2a2f4a;
+  --accent:   #7c3aed;
+  --accent2:  #06b6d4;
+  --gold:     #f59e0b;
+  --green:    #10b981;
+  --red:      #ef4444;
+  --orange:   #f97316;
+  --text:     #e2e8f0;
+  --muted:    #64748b;
+  --radius:   14px;
+  --font:     'Segoe UI', 'Noto Sans Thai', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  min-height: 100svh;
+  overflow-x: hidden;
+}
+
+.hidden { display: none !important; }
+
+/* ========================
+   SCROLLBAR
+   ======================== */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+/* ========================
+   NAV
+   ======================== */
+#topnav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(13,15,26,0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 16px; height: 56px;
+}
+#topnav .logo {
+  font-size: 1.1rem; font-weight: 800;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  letter-spacing: -0.5px;
+}
+#topnav .nav-right { display: flex; align-items: center; gap: 10px; }
+#topnav .user-chip {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 20px; padding: 4px 12px; font-size: 0.78rem; color: var(--text);
+}
+.btn-logout {
+  background: transparent; border: 1px solid var(--red);
+  color: var(--red); border-radius: 8px; padding: 4px 10px;
+  font-size: 0.75rem; cursor: pointer; transition: all 0.2s;
+}
+.btn-logout:hover { background: var(--red); color: white; }
+
+/* ========================
+   PAGE WRAPPER
+   ======================== */
+#app { padding-top: 56px; }
+.page { min-height: calc(100svh - 56px); padding: 20px 16px 32px; max-width: 480px; margin: 0 auto; }
+.page.wide { max-width: 1200px; }
+
+/* ========================
+   BUTTONS
+   ======================== */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border: none; border-radius: var(--radius); cursor: pointer;
+  font-family: var(--font); font-weight: 700; font-size: 0.9rem;
+  padding: 12px 20px; transition: all 0.2s; width: 100%;
+}
+.btn-primary { background: linear-gradient(135deg, var(--accent), #9333ea); color: white; }
+.btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+.btn-cyan { background: linear-gradient(135deg, var(--accent2), #0891b2); color: white; }
+.btn-green { background: linear-gradient(135deg, var(--green), #059669); color: white; }
+.btn-gold { background: linear-gradient(135deg, var(--gold), #d97706); color: #1a1a1a; }
+.btn-red { background: linear-gradient(135deg, var(--red), #dc2626); color: white; }
+.btn-ghost {
+  background: transparent; border: 1px solid var(--border); color: var(--text);
+}
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+.btn-sm { padding: 8px 14px; font-size: 0.8rem; width: auto; border-radius: 8px; }
+
+/* ========================
+   CARDS
+   ======================== */
+.card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+}
+.card + .card { margin-top: 14px; }
+.card-title { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 8px; }
+.card-value { font-size: 1.6rem; font-weight: 800; }
+
+/* ========================
+   INPUTS
+   ======================== */
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 0.78rem; color: var(--muted); margin-bottom: 5px; font-weight: 600; }
+.field input, .field select, .field textarea {
+  width: 100%; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 11px 14px; color: var(--text);
+  font-family: var(--font); font-size: 0.9rem; outline: none;
+  transition: border-color 0.2s;
+}
+.field input:focus, .field select:focus { border-color: var(--accent); }
+.field select option { background: var(--surface); }
+
+/* ========================
+   MODAL
+   ======================== */
+#modal-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+}
+#modal-box {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 20px; padding: 28px; width: calc(100% - 32px); max-width: 420px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+#modal-title { font-size: 1.2rem; font-weight: 800; margin-bottom: 12px; }
+#modal-body { color: var(--muted); font-size: 0.9rem; margin-bottom: 20px; line-height: 1.6; }
+#modal-actions { display: flex; gap: 10px; }
+#modal-actions .btn { flex: 1; }
+
+/* ========================
+   SCANNER
+   ======================== */
+#scanner-modal {
+  position: fixed; inset: 0; z-index: 300;
+  background: black; display: flex; flex-direction: column;
+}
+#scanner-header {
+  background: rgba(13,15,26,0.9); padding: 16px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+#qr-reader { width: 100% !important; }
+#qr-reader video { border-radius: 0 !important; }
+
+/* ========================
+   HERO BANNER (Login)
+   ======================== */
+.login-hero {
+  text-align: center; padding: 40px 0 30px;
+}
+.login-hero .camp-title {
+  font-size: 2.8rem; font-weight: 900; line-height: 1;
+  background: linear-gradient(135deg, #f59e0b, #ef4444, #7c3aed);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  letter-spacing: -1px;
+}
+.login-hero .camp-sub {
+  font-size: 0.85rem; color: var(--muted); margin-top: 6px; letter-spacing: 2px;
+}
+.login-hero .emoji-line { font-size: 2rem; margin: 12px 0; }
+
+/* ========================
+   ROLE TABS
+   ======================== */
+.tab-row {
+  display: flex; gap: 0; background: var(--surface);
+  border-radius: 10px; padding: 4px; margin-bottom: 20px;
+}
+.tab-btn {
+  flex: 1; padding: 9px; border: none; background: transparent;
+  color: var(--muted); font-family: var(--font); font-size: 0.8rem;
+  font-weight: 600; border-radius: 8px; cursor: pointer; transition: all 0.2s;
+}
+.tab-btn.active { background: var(--accent); color: white; }
+
+/* ========================
+   BADGE STAMP SYSTEM
+   ======================== */
+.stamp-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+}
+.stamp {
+  aspect-ratio: 1; border-radius: 12px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 4px;
+  border: 2px dashed var(--border); background: var(--surface);
+  position: relative; transition: all 0.3s; cursor: default;
+}
+.stamp.earned {
+  border: 2px solid var(--gold);
+  background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(124,58,237,0.1));
+  box-shadow: 0 0 12px rgba(245,158,11,0.3);
+}
+.stamp .stamp-icon { font-size: 1.6rem; filter: grayscale(1) opacity(0.3); }
+.stamp.earned .stamp-icon { filter: none; }
+.stamp .stamp-label { font-size: 0.55rem; color: var(--muted); text-align: center; padding: 0 4px; line-height: 1.2; }
+.stamp.earned .stamp-label { color: var(--gold); }
+.stamp .stamp-check {
+  position: absolute; top: -6px; right: -6px;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--green); display: flex; align-items: center; justify-content: center;
+  font-size: 0.6rem; color: white; font-weight: 900;
+}
+
+/* ========================
+   ROUTE PROGRESS
+   ======================== */
+.route-bar {
+  display: flex; align-items: center; gap: 0; overflow-x: auto;
+  padding: 10px 0; scrollbar-width: none;
+}
+.route-bar::-webkit-scrollbar { display: none; }
+.route-node {
+  flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.route-dot {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 2px solid var(--border); background: var(--surface);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem; font-weight: 800; color: var(--muted);
+  transition: all 0.3s;
+}
+.route-dot.done { background: var(--green); border-color: var(--green); color: white; }
+.route-dot.current { background: var(--accent); border-color: var(--accent); color: white; box-shadow: 0 0 10px var(--accent); animation: pulse-dot 1.5s infinite; }
+.route-dot.next { border-color: var(--orange); color: var(--orange); }
+@keyframes pulse-dot { 0%,100%{box-shadow:0 0 8px var(--accent)} 50%{box-shadow:0 0 18px var(--accent)} }
+.route-line {
+  width: 28px; height: 2px; background: var(--border); flex-shrink: 0; margin-bottom: 16px;
+}
+.route-line.done { background: var(--green); }
+.route-label { font-size: 0.6rem; color: var(--muted); max-width: 36px; text-align: center; line-height: 1.2; }
+
+/* ========================
+   LEADERBOARD TV
+   ======================== */
+.lb-bg {
+  background: linear-gradient(180deg, #0a0015 0%, #0d0f1a 100%);
+  min-height: 100svh; padding: 0;
+}
+.lb-header {
+  text-align: center; padding: 30px 20px 20px;
+  background: linear-gradient(180deg, rgba(124,58,237,0.2), transparent);
+}
+.lb-title {
+  font-size: clamp(1.8rem, 4vw, 3rem); font-weight: 900;
+  background: linear-gradient(135deg, var(--gold), #ef4444, var(--accent));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.lb-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; padding: 0 20px 30px; }
+.lb-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+  padding: 18px; position: relative; overflow: hidden; transition: all 0.3s;
+}
+.lb-card.rank-1 { border-color: var(--gold); background: linear-gradient(135deg, rgba(245,158,11,0.12), var(--card)); }
+.lb-card.rank-2 { border-color: #94a3b8; background: linear-gradient(135deg, rgba(148,163,184,0.08), var(--card)); }
+.lb-card.rank-3 { border-color: var(--orange); background: linear-gradient(135deg, rgba(249,115,22,0.08), var(--card)); }
+.lb-rank-badge {
+  position: absolute; top: 12px; right: 14px;
+  font-size: 1.4rem; font-weight: 900;
+}
+.lb-group-name { font-size: 1rem; font-weight: 800; margin-bottom: 8px; }
+.lb-progress-bar { background: var(--border); border-radius: 4px; height: 6px; margin: 8px 0; overflow: hidden; }
+.lb-progress-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width 1s ease; }
+.lb-stats { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--muted); }
+.lb-stamps { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 8px; }
+.lb-stamp { font-size: 1.1rem; }
+
+/* ========================
+   MAP CARD
+   ======================== */
+.map-wrap { border-radius: var(--radius); overflow: hidden; height: 220px; position: relative; border: 1px solid var(--border); }
+.map-wrap iframe { width: 100%; height: 100%; border: none; }
+.map-placeholder { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--surface); color: var(--muted); font-size: 0.85rem; }
+
+/* ========================
+   STATUS BADGES
+   ======================== */
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700;
+}
+.badge-moving { background: rgba(245,158,11,0.2); color: var(--gold); }
+.badge-at-station { background: rgba(16,185,129,0.2); color: var(--green); }
+.badge-done { background: rgba(99,102,241,0.2); color: #818cf8; }
+.badge-nogroup { background: rgba(100,116,139,0.2); color: var(--muted); }
+
+/* ========================
+   ADMIN TABS
+   ======================== */
+.admin-tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 16px; }
+.admin-tab { flex-shrink: 0; padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+.admin-tab.active { background: var(--accent); border-color: var(--accent); color: white; }
+
+/* ========================
+   LIST ITEMS
+   ======================== */
+.list-item {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px 14px; margin-bottom: 8px;
+}
+.list-item .info { flex: 1; }
+.list-item .info .name { font-weight: 700; font-size: 0.9rem; }
+.list-item .info .sub { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+.list-item .actions { display: flex; gap: 6px; }
+
+/* ========================
+   SECTION HEADER
+   ======================== */
+.section-header {
+  background: var(--card); border-left: 3px solid var(--accent);
+  border-radius: 0 10px 10px 0; padding: 14px 18px; margin-bottom: 16px;
+}
+.section-header h2 { font-size: 1.3rem; font-weight: 900; }
+.section-header p { font-size: 0.8rem; color: var(--muted); margin-top: 3px; }
+
+/* ========================
+   STATION CARD AT STATION
+   ======================== */
+.at-station-banner {
+  background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(6,182,212,0.1));
+  border: 1px solid var(--green); border-radius: var(--radius);
+  padding: 20px; text-align: center; margin-bottom: 14px;
+}
+.at-station-banner .station-emoji { font-size: 3rem; }
+.at-station-banner h3 { font-size: 1.3rem; font-weight: 900; color: var(--green); }
+
+/* ========================
+   INCOMING GROUP (Station view)
+   ======================== */
+.group-incoming {
+  background: linear-gradient(135deg, rgba(124,58,237,0.15), rgba(6,182,212,0.05));
+  border: 1px solid var(--accent); border-radius: var(--radius);
+  padding: 14px; display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.group-incoming .group-info h4 { font-weight: 800; color: var(--accent2); }
+.group-incoming .group-info p { font-size: 0.75rem; color: var(--muted); }
+
+/* ========================
+   ANIMATION
+   ======================== */
+@keyframes fadeInUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:none} }
+.fade-in { animation: fadeInUp 0.4s ease forwards; }
+@keyframes confetti { 0%{transform:translateY(-10px) rotate(0)} 100%{transform:translateY(100vh) rotate(720deg)} }
+
+/* ========================
+   QUICK STATS ROW
+   ======================== */
+.stats-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 14px; }
+.stat-mini { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 10px; text-align: center; }
+.stat-mini .val { font-size: 1.4rem; font-weight: 900; }
+.stat-mini .lbl { font-size: 0.65rem; color: var(--muted); margin-top: 2px; }
+
+/* ========================
+   QR DISPLAY
+   ======================== */
+.qr-wrap { background: white; padding: 16px; border-radius: 14px; display: inline-block; }
+
+/* Google Maps Link Button */
+.map-nav-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  background: linear-gradient(135deg, #34a853, #0f9d58);
+  color: white; padding: 11px; border-radius: 10px;
+  font-weight: 700; font-size: 0.85rem; text-decoration: none;
+  transition: opacity 0.2s; margin-top: 10px; cursor: pointer; border: none;
+  width: 100%; font-family: var(--font);
+}
+.map-nav-btn:hover { opacity: 0.9; }
+</style>
 </head>
-<body class="antialiased h-screen flex flex-col items-center justify-center overflow-hidden">
+<body>
 
-    <div id="loader" class="fixed inset-0 bg-bgDark/90 backdrop-blur-md z-[200] flex flex-col items-center justify-center hidden">
-        <div class="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-        <p class="text-primary font-bold mt-4 tracking-widest uppercase text-sm">Processing...</p>
+<!-- TOP NAV -->
+<nav id="topnav">
+  <div class="logo">🏕️ Freshy In '69</div>
+  <div class="nav-right">
+    <div id="nav-chip" class="user-chip hidden"></div>
+    <button id="nav-lb" onclick="showLeaderboard()" class="btn btn-gold btn-sm hidden" style="width:auto">📺 Leaderboard</button>
+    <button id="nav-logout" onclick="logout()" class="btn-logout hidden">ออก</button>
+  </div>
+</nav>
+
+<div id="app">
+
+<!-- ==================== LOGIN PAGE ==================== -->
+<div id="page-login" class="page fade-in">
+  <div class="login-hero">
+    <div class="camp-title">FRESHY IN</div>
+    <div class="camp-title" style="font-size:4rem;line-height:0.9">'69</div>
+    <div class="emoji-line">🎪🏕️⚡🎯🏆</div>
+    <div class="camp-sub">ระบบเกมรับน้อง · คณะ · ปีการศึกษา 2569</div>
+  </div>
+
+  <div class="card">
+    <div class="tab-row">
+      <button class="tab-btn active" onclick="switchLoginTab('login')">เข้าสู่ระบบ</button>
+      <button class="tab-btn" onclick="switchLoginTab('register')">สมัครใหม่</button>
     </div>
 
-    <div id="custom-modal" class="fixed inset-0 z-[150] hidden flex items-center justify-center px-4">
-        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="window.closeModal()"></div>
-        <div id="modal-box" class="glass-panel rounded-2xl w-full max-w-sm p-6 relative z-10 fade-in border-t-4 border-t-primary shadow-[0_0_30px_rgba(16,185,129,0.15)]">
-            <h3 id="modal-title" class="text-xl font-bold text-white mb-2 flex items-center"><i id="modal-icon" class="mr-2"></i><span></span></h3>
-            <p id="modal-text" class="text-sm text-textMuted mb-6"></p>
-            <div class="flex gap-3 justify-end" id="modal-buttons">
-                <button id="btn-modal-cancel" class="hidden px-4 py-2 bg-gray-800 text-white rounded-lg font-bold" onclick="window.closeModal()">ยกเลิก</button>
-                <button id="btn-modal-confirm" class="px-5 py-2 bg-primary hover:bg-emerald-500 text-white rounded-lg font-bold transition-all shadow-[0_0_15px_rgba(16,185,129,0.4)]" onclick="window.confirmModal()">รับทราบ</button>
-            </div>
-        </div>
+    <!-- LOGIN FORM -->
+    <div id="login-form">
+      <div class="field"><label>ชื่อผู้ใช้ / รหัสนักศึกษา</label><input id="l-user" type="text" placeholder="username"></div>
+      <div class="field"><label>รหัสผ่าน</label><input id="l-pass" type="password" placeholder="password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <button class="btn btn-primary" onclick="doLogin()">🔓 เข้าสู่ระบบ</button>
     </div>
 
-    <div id="qr-modal" class="fixed inset-0 z-[140] hidden flex items-center justify-center px-4">
-        <div class="absolute inset-0 bg-black/90 backdrop-blur-sm" onclick="window.closeQrModal()"></div>
-        <div class="glass-panel rounded-3xl w-full max-w-xs p-8 relative z-10 fade-in text-center flex flex-col items-center">
-            <h3 class="text-lg font-bold text-white mb-1" id="qr-title">สแกนเพื่อเข้าร่วม</h3>
-            <p class="text-xs text-emerald-400 mb-6">ให้น้องเปิดแอปแล้วใช้กล้องสแกน</p>
-            <div class="bg-white p-3 rounded-xl mb-6 shadow-[0_0_20px_rgba(16,185,129,0.3)]"><img id="qr-image" src="" class="w-48 h-48"></div>
-            <button onclick="window.closeQrModal()" class="w-full py-3 bg-gray-800 rounded-xl text-sm font-bold hover:bg-gray-700">ปิดหน้าต่าง</button>
-        </div>
+    <!-- REGISTER FORM -->
+    <div id="register-form" class="hidden">
+      <div class="field"><label>ชื่อเล่น / ชื่อที่ใช้ในกิจกรรม</label><input id="r-name" type="text" placeholder="ชื่อเล่น"></div>
+      <div class="field"><label>รหัสนักศึกษา (ใช้เป็น username)</label><input id="r-user" type="text" placeholder="6XXXXXXXXX"></div>
+      <div class="field"><label>รหัสผ่าน</label><input id="r-pass" type="password" placeholder="ตั้งรหัสผ่านของคุณ"></div>
+      <div class="field"><label>ยืนยันรหัสผ่าน</label><input id="r-pass2" type="password" placeholder="พิมพ์รหัสผ่านอีกครั้ง"></div>
+      <button class="btn btn-cyan" onclick="doRegister()">✨ สมัครเข้าร่วมกิจกรรม</button>
+      <p style="text-align:center;font-size:0.75rem;color:var(--muted);margin-top:12px">เมื่อสมัครแล้ว คุณจะได้รับสถานะ <b style="color:var(--accent2)">น้อง 69</b> ยังไม่มีกลุ่ม รอพี่กลุ่มพาเข้ากลุ่มนะ!</p>
+    </div>
+  </div>
+
+  <!-- QUICK SCAN JOIN GROUP -->
+  <div style="text-align:center;margin-top:20px">
+    <p style="font-size:0.8rem;color:var(--muted);margin-bottom:10px">มี QR Code จากพี่กลุ่มแล้วหรือเปล่า?</p>
+    <button class="btn btn-ghost" onclick="startScanner('join_group_anon')" style="max-width:300px;margin:0 auto">
+      📷 สแกน QR เพื่อเข้ากลุ่ม (ไม่ต้อง Login)
+    </button>
+  </div>
+</div>
+
+<!-- ==================== STUDENT PAGE ==================== -->
+<div id="page-student" class="page hidden fade-in">
+  <div class="section-header">
+    <h2 id="st-name">ชื่อน้อง</h2>
+    <p id="st-group-label">กำลังโหลด...</p>
+  </div>
+
+  <!-- No group state -->
+  <div id="st-nogroup" class="hidden">
+    <div class="card" style="text-align:center;padding:30px">
+      <div style="font-size:3rem;margin-bottom:12px">🔍</div>
+      <h3 style="margin-bottom:8px">ยังไม่มีกลุ่ม</h3>
+      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:20px">ขอให้พี่กลุ่มแสดง QR แล้วสแกนเพื่อเข้ากลุ่ม</p>
+      <button class="btn btn-cyan" onclick="startScanner('join_group')">📷 สแกน QR เข้ากลุ่ม</button>
+    </div>
+  </div>
+
+  <!-- Has group state -->
+  <div id="st-ingroup">
+    <!-- Status badge -->
+    <div style="margin-bottom:14px;display:flex;align-items:center;gap:10px">
+      <span id="st-status-badge" class="badge badge-moving">🚶 กำลังเดินทาง</span>
+      <span id="st-route-progress" style="font-size:0.78rem;color:var(--muted)"></span>
     </div>
 
-    <div id="view-auth" class="w-full h-full max-w-md flex flex-col justify-center p-6 fade-in relative">
-        <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/20 via-bgDark to-bgDark -z-10"></div>
-        <div class="text-center mb-8">
-            <i class="fas fa-fingerprint text-5xl text-primary mb-4 drop-shadow-[0_0_15px_rgba(16,185,129,0.5)]"></i>
-            <h1 class="text-3xl font-extrabold text-white tracking-wider">FRESHY <span class="text-primary">69</span></h1>
-            <p class="text-textMuted text-xs tracking-widest uppercase mt-2">Authentication System</p>
+    <!-- Current / Next station info -->
+    <div class="card" style="margin-bottom:14px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;text-align:center">
+        <div>
+          <div class="card-title">🏔️ ฐานตอนนี้</div>
+          <div id="st-curr" class="card-value" style="font-size:1.1rem;color:var(--accent2)">-</div>
         </div>
-
-        <div id="form-login" class="space-y-4 fade-in">
-            <input type="text" id="login-id" placeholder="รหัสนักศึกษา / รหัสผู้ใช้" class="input-dark w-full px-4 py-3.5 rounded-xl text-sm">
-            <input type="password" id="login-pwd" placeholder="รหัสผ่าน" class="input-dark w-full px-4 py-3.5 rounded-xl text-sm">
-            <button onclick="window.auth('login')" class="w-full bg-primary hover:bg-emerald-500 text-white py-3.5 rounded-xl font-bold shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all">ACCESS GRANTED <i class="fas fa-chevron-right ml-1 text-xs"></i></button>
-            <div class="flex justify-between text-xs text-textMuted pt-4 px-2">
-                <button onclick="window.switchAuth('register')" class="hover:text-primary">สร้างบัญชีใหม่</button>
-                <button onclick="window.switchAuth('forgot')" class="hover:text-primary">ลืมรหัสผ่าน?</button>
-            </div>
+        <div>
+          <div class="card-title">➡️ ฐานต่อไป</div>
+          <div id="st-next" class="card-value" style="font-size:1.1rem;color:var(--orange)">-</div>
         </div>
-
-        <div id="form-register" class="space-y-4 hidden fade-in">
-            <input type="text" id="reg-id" placeholder="รหัสนักศึกษา (เช่น 6620901001)" class="input-dark w-full px-4 py-3 rounded-xl text-sm">
-            <input type="text" id="reg-name" placeholder="ชื่อ - นามสกุล" class="input-dark w-full px-4 py-3 rounded-xl text-sm">
-            <input type="email" id="reg-email" placeholder="อีเมล (สำหรับกู้รหัสผ่าน)" class="input-dark w-full px-4 py-3 rounded-xl text-sm">
-            <input type="password" id="reg-pwd" placeholder="ตั้งรหัสผ่าน" class="input-dark w-full px-4 py-3 rounded-xl text-sm">
-            <button onclick="window.auth('register')" class="w-full bg-accent hover:bg-blue-500 text-white py-3.5 rounded-xl font-bold shadow-[0_0_15px_rgba(59,130,246,0.3)]">INITIALIZE ACCOUNT</button>
-            <div class="text-center text-xs pt-2"><button onclick="window.switchAuth('login')" class="text-textMuted hover:text-white">กลับไปหน้าล็อกอิน</button></div>
-        </div>
-
-        <div id="form-forgot" class="space-y-4 hidden fade-in">
-            <p class="text-xs text-emerald-400 text-center mb-2">ระบบจะส่ง OTP 6 หลักไปยังอีเมลของคุณ</p>
-            <input type="text" id="fgt-id" placeholder="รหัสนักศึกษา" class="input-dark w-full px-4 py-3 rounded-xl text-sm">
-            <input type="email" id="fgt-email" placeholder="อีเมลที่ลงทะเบียนไว้" class="input-dark w-full px-4 py-3 rounded-xl text-sm">
-            <button onclick="window.requestOtp()" class="w-full bg-gray-700 hover:bg-gray-600 text-white py-3.5 rounded-xl font-bold">SEND OTP</button>
-            
-            <div id="box-otp" class="hidden space-y-4 pt-4 border-t border-gray-800">
-                <input type="text" id="fgt-otp" placeholder="รหัส OTP 6 หลัก" class="input-dark w-full px-4 py-3 rounded-xl text-sm text-center tracking-widest font-mono text-lg text-emerald-400">
-                <input type="password" id="fgt-newpwd" placeholder="ตั้งรหัสผ่านใหม่" class="input-dark w-full px-4 py-3 rounded-xl text-sm">
-                <button onclick="window.resetPwd()" class="w-full bg-primary hover:bg-emerald-500 text-white py-3.5 rounded-xl font-bold shadow-[0_0_15px_rgba(16,185,129,0.3)]">RESET PASSWORD</button>
-            </div>
-            <div class="text-center text-xs pt-2"><button onclick="window.switchAuth('login')" class="text-textMuted hover:text-white">ยกเลิก</button></div>
-        </div>
+      </div>
     </div>
 
-    <div id="view-dashboard" class="w-full h-full max-w-md bg-bgDark flex flex-col hidden fade-in">
-        <div class="glass-panel px-5 py-4 flex justify-between items-center z-10 sticky top-0 border-b border-gray-800">
-            <div>
-                <p id="dash-role" class="text-[10px] text-primary font-bold uppercase tracking-widest">ROLE</p>
-                <h2 id="dash-name" class="text-base font-bold text-white truncate w-48">NAME</h2>
-            </div>
-            <button onclick="window.logout()" class="w-8 h-8 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center hover:bg-red-500/40"><i class="fas fa-sign-out-alt text-sm"></i></button>
-        </div>
-
-        <div class="flex-1 overflow-y-auto w-full p-4 pb-24 space-y-4" id="dash-content"></div>
-        
-        <div class="glass-panel h-[72px] flex justify-around items-center fixed bottom-0 w-full max-w-md z-50 border-t border-gray-800 pb-safe">
-            <button onclick="window.loadDashboard()" class="text-primary flex flex-col items-center"><i class="fas fa-home text-xl mb-1"></i><span class="text-[9px] font-bold uppercase tracking-wider">Home</span></button>
-            
-            <div class="relative -top-6">
-                <button id="btn-main-action" onclick="window.triggerMainAction()" class="w-16 h-16 bg-primary rounded-full text-bgDark flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.4)] border-4 border-bgDark transform hover:scale-105 transition-transform">
-                    <i id="icon-main-action" class="fas fa-qrcode text-2xl"></i>
-                </button>
-            </div>
-            
-            <button onclick="window.showModal({type:'info', title:'ระบบ', text:'คุณใช้งานในสิทธิ์: '+window.currentUser.role})" class="text-textMuted hover:text-white flex flex-col items-center"><i class="fas fa-user text-xl mb-1"></i><span class="text-[9px] font-bold uppercase tracking-wider">Profile</span></button>
-        </div>
+    <!-- Route bar -->
+    <div class="card" style="margin-bottom:14px;overflow:hidden">
+      <div class="card-title">เส้นทางกิจกรรม</div>
+      <div id="st-route-bar" class="route-bar"></div>
     </div>
 
-    <div id="modal-scanner" class="fixed inset-0 bg-bgDark/95 z-[160] flex flex-col hidden fade-in backdrop-blur-sm">
-        <div class="flex justify-between items-center p-5 text-white border-b border-gray-800">
-            <h2 class="font-bold tracking-widest text-sm text-primary uppercase"><i class="fas fa-crosshairs mr-2"></i>Scanner</h2>
-            <button onclick="window.closeScanner()" class="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="flex-1 flex flex-col items-center justify-center px-4">
-            <div class="relative w-full max-w-sm">
-                <div class="absolute -inset-1 border-2 border-primary/30 rounded-3xl pointer-events-none"></div>
-                <div class="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-primary rounded-tl-2xl z-10 pointer-events-none"></div>
-                <div class="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-primary rounded-tr-2xl z-10 pointer-events-none"></div>
-                <div class="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-primary rounded-bl-2xl z-10 pointer-events-none"></div>
-                <div class="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-primary rounded-br-2xl z-10 pointer-events-none"></div>
-                <div id="reader" class="w-full rounded-2xl bg-black overflow-hidden min-h-[300px]"></div>
-            </div>
-            <div id="scanner-status" class="text-textMuted mt-8 text-sm text-center">SCAN TARGET ACQUIRED</div>
-        </div>
+    <!-- Map -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-title" style="margin-bottom:10px">🗺️ แผนที่นำทาง</div>
+      <div class="map-wrap">
+        <iframe id="st-map-iframe" src=""></iframe>
+        <div id="st-map-placeholder" class="map-placeholder">📍 ยังไม่มีพิกัดฐาน</div>
+      </div>
+      <a id="st-nav-btn" href="#" target="_blank" class="map-nav-btn hidden">
+        🧭 เปิด Google Maps นำทาง
+      </a>
     </div>
 
-    <script>
-        // ===============================================
-        // นำ URL ของ Web App (ที่ได้จาก GAS) มาวางตรงนี้!
-        // ===============================================
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycby_XYsz0EJ0JBFQpQX88FgKy3sL1ENaPUthjIJoxe_sPhImdrr4VG5VP4iDQlM9tXO6Fw/exec"; 
+    <!-- Badge Stamps -->
+    <div class="card">
+      <div class="card-title" style="margin-bottom:12px">🏅 Badges สะสม</div>
+      <div id="st-stamp-grid" class="stamp-grid"></div>
+    </div>
+  </div>
+</div>
 
-        window.currentUser = null; window.html5QrCode = null; window.modalConfirmCallback = null; window.myStationId = null;
+<!-- ==================== GROUP LEADER PAGE ==================== -->
+<div id="page-group" class="page hidden fade-in">
+  <div class="section-header">
+    <h2 id="gl-name">กลุ่ม</h2>
+    <p id="gl-sub">พี่กลุ่ม</p>
+  </div>
 
-        window.showModal = function(opts) {
-            var m = document.getElementById('custom-modal');
-            document.getElementById('modal-title').querySelector('span').innerText = opts.title || '';
-            document.getElementById('modal-text').innerText = opts.text || '';
-            var icon = document.getElementById('modal-icon');
-            if(opts.type === 'error') { icon.className = 'fas fa-times-circle text-red-500'; document.getElementById('modal-title').className = 'text-xl font-bold text-red-500 mb-2 flex items-center'; }
-            else if(opts.type === 'warning') { icon.className = 'fas fa-exclamation-triangle text-amber-500'; document.getElementById('modal-title').className = 'text-xl font-bold text-amber-500 mb-2 flex items-center'; }
-            else { icon.className = 'fas fa-check-circle text-primary'; document.getElementById('modal-title').className = 'text-xl font-bold text-primary mb-2 flex items-center'; }
-            
-            if(opts.isConfirm) { document.getElementById('btn-modal-cancel').classList.remove('hidden'); window.modalConfirmCallback = opts.onConfirm; } 
-            else { document.getElementById('btn-modal-cancel').classList.add('hidden'); window.modalConfirmCallback = null; }
-            m.classList.remove('hidden');
-        };
-        window.closeModal = function() { document.getElementById('custom-modal').classList.add('hidden'); };
-        window.confirmModal = function() { window.closeModal(); if(window.modalConfirmCallback) window.modalConfirmCallback(); };
-        window.showLoader = function(show) { document.getElementById('loader').style.display = show ? 'flex' : 'none'; };
-        
-        window.switchAuth = function(tab) {
-            document.getElementById('form-login').classList.add('hidden'); document.getElementById('form-register').classList.add('hidden'); document.getElementById('form-forgot').classList.add('hidden');
-            document.getElementById('form-' + tab).classList.remove('hidden');
-        };
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-mini"><div class="val" id="gl-member-count">0</div><div class="lbl">น้องในกลุ่ม</div></div>
+    <div class="stat-mini"><div class="val" id="gl-station-done">0</div><div class="lbl">ฐานผ่านแล้ว</div></div>
+    <div class="stat-mini"><div class="val" id="gl-station-total">0</div><div class="lbl">ฐานทั้งหมด</div></div>
+  </div>
 
-        window.generateQR = function(payloadObj, title) {
-            document.getElementById('qr-title').innerText = title;
-            document.getElementById('qr-image').src = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" + encodeURIComponent(JSON.stringify(payloadObj)) + "&margin=10";
-            document.getElementById('qr-modal').classList.remove('hidden');
-        };
-        window.closeQrModal = function() { document.getElementById('qr-modal').classList.add('hidden'); };
+  <!-- Status & Actions -->
+  <div style="margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <span id="gl-status-badge" class="badge badge-moving">🚶 กำลังเดินทาง</span>
+  </div>
 
-        // --- NEW API CALLER (REST API WITH FETCH) ---
-        window.apiCall = function(action, payload) {
-    return new Promise(function(resolve, reject) {
-        window.showLoader(true);
-        payload.action = action;
-        
-        // สร้างชื่อฟังก์ชัน callback แบบสุ่ม
-        var callbackName = 'jsonp_' + Math.round(100000 * Math.random());
-        window[callbackName] = function(data) {
-            delete window[callbackName];
-            document.body.removeChild(script);
-            window.showLoader(false);
-            resolve(data);
-        };
-        
-                        // สร้าง script tag ดึงข้อมูลจาก GAS
-                        var script = document.createElement('script');
-                        var url = GAS_API_URL + '?callback=' + callbackName + '&data=' + encodeURIComponent(JSON.stringify(payload));
-                        script.src = url;
-                        document.body.appendChild(script);
-                        
-                        // กันเหนียวกรณีโหลดไม่ติด
-                        script.onerror = function() {
-                            window.showLoader(false);
-                            reject({success: false, message: 'Connection Error'});
-                        };
-                    });
-                };
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+    <button class="btn btn-cyan" onclick="showGroupQR()">📱 QR ให้น้องเข้ากลุ่ม</button>
+    <button class="btn btn-green" onclick="startScanner('checkin_station')">📷 สแกนเข้าฐาน</button>
+  </div>
 
-        window.auth = async function(type) {
-            if(type === 'login') {
-                var sid = document.getElementById('login-id').value; var pwd = document.getElementById('login-pwd').value;
-                if(!sid || !pwd) return window.showModal({type:'warning', title:'SYSTEM', text:'กรุณากรอกข้อมูลให้ครบ'});
-                var res = await window.apiCall('login', {studentId: sid, password: pwd});
-                if(res.success) { window.currentUser = res.user; window.initApp(); } else window.showModal({type:'error', title:'DENIED', text:res.message});
-            } else {
-                var sid2 = document.getElementById('reg-id').value; var name = document.getElementById('reg-name').value; var email = document.getElementById('reg-email').value; var pwd2 = document.getElementById('reg-pwd').value;
-                if(!sid2 || !name || !pwd2 || !email) return window.showModal({type:'warning', title:'SYSTEM', text:'กรุณากรอกข้อมูลให้ครบ'});
-                var res2 = await window.apiCall('register', {studentId: sid2, name: name, email: email, password: pwd2});
-                if(res2.success) { window.showModal({type:'success', title:'SUCCESS', text:res2.message, isConfirm:true, onConfirm:function(){window.switchAuth('login');}}); } else window.showModal({type:'error', title:'DENIED', text:res2.message});
-            }
-        };
+  <!-- Current / Next -->
+  <div class="card" style="margin-bottom:14px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;text-align:center">
+      <div><div class="card-title">🏔️ ฐานตอนนี้</div><div id="gl-curr" class="card-value" style="font-size:1.1rem;color:var(--accent2)">-</div></div>
+      <div><div class="card-title">➡️ ฐานต่อไป</div><div id="gl-next" class="card-value" style="font-size:1.1rem;color:var(--orange)">-</div></div>
+    </div>
+  </div>
 
-        window.requestOtp = async function() {
-            var sid = document.getElementById('fgt-id').value; var email = document.getElementById('fgt-email').value;
-            if(!sid || !email) return window.showModal({type:'warning', title:'SYSTEM', text:'กรอกรหัสและอีเมล'});
-            var res = await window.apiCall('requestOtp', {studentId: sid, email: email});
-            if(res.success) { document.getElementById('box-otp').classList.remove('hidden'); window.showModal({type:'success', title:'SENT', text:res.message}); } 
-            else { window.showModal({type:'error', title:'FAILED', text:res.message}); }
-        };
+  <!-- Route Bar -->
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-title">เส้นทางกิจกรรม</div>
+    <div id="gl-route-bar" class="route-bar"></div>
+  </div>
 
-        window.resetPwd = async function() {
-            var sid = document.getElementById('fgt-id').value; var otp = document.getElementById('fgt-otp').value; var pwd = document.getElementById('fgt-newpwd').value;
-            if(!otp || !pwd) return window.showModal({type:'warning', title:'SYSTEM', text:'กรอก OTP และรหัสใหม่'});
-            var res = await window.apiCall('resetPwd', {studentId: sid, otp: otp, newPassword: pwd});
-            if(res.success) { window.showModal({type:'success', title:'SUCCESS', text:res.message, isConfirm:true, onConfirm:function(){window.switchAuth('login');}}); document.getElementById('box-otp').classList.add('hidden'); } 
-            else { window.showModal({type:'error', title:'FAILED', text:res.message}); }
-        };
+  <!-- Map -->
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-title" style="margin-bottom:10px">🗺️ แผนที่</div>
+    <div class="map-wrap">
+      <iframe id="gl-map-iframe" src=""></iframe>
+      <div id="gl-map-placeholder" class="map-placeholder">📍 ยังไม่มีพิกัดฐาน</div>
+    </div>
+    <a id="gl-nav-btn" href="#" target="_blank" class="map-nav-btn hidden">🧭 เปิด Google Maps นำทาง</a>
+  </div>
 
-        window.logout = function() { window.currentUser = null; document.getElementById('view-dashboard').classList.add('hidden'); document.getElementById('view-auth').classList.remove('hidden'); };
+  <!-- Members -->
+  <div class="card">
+    <div class="card-title" style="margin-bottom:12px">👥 น้องในกลุ่ม</div>
+    <div id="gl-members-list"></div>
+  </div>
+</div>
 
-        window.initApp = function() {
-            document.getElementById('view-auth').classList.add('hidden'); document.getElementById('view-dashboard').classList.remove('hidden');
-            document.getElementById('dash-role').innerText = window.currentUser.role; document.getElementById('dash-name').innerText = window.currentUser.name;
-            var icon = document.getElementById('icon-main-action');
-            if(window.currentUser.role === 'student') { icon.className = "fas fa-camera text-2xl"; } else if(window.currentUser.role === 'admin') { icon.className = "fas fa-cogs text-2xl"; } else { icon.className = "fas fa-qrcode text-2xl"; }
-            window.loadDashboard();
-        };
+<!-- ==================== STATION LEADER PAGE ==================== -->
+<div id="page-station" class="page hidden fade-in">
+  <div class="section-header">
+    <h2 id="sl-name">ชื่อฐาน</h2>
+    <p id="sl-id">รหัสฐาน</p>
+  </div>
 
-        window.triggerMainAction = function() {
-            if(window.currentUser.role === 'student') { window.startScanner(); }
-            else if(window.currentUser.role === 'mentor') { window.generateQR({t:'join', g:window.currentUser.groupId}, 'สแกนเพื่อเข้ากลุ่ม'); }
-            else if(window.currentUser.role === 'station_master') { window.generateQR({t:'station', s:(window.myStationId||"none")}, 'สแกนเพื่อยืนยันผ่านฐาน'); }
-            else { window.showModal({type:'info', title:'ADMIN', text:'โหมดจัดการข้อมูล (ไม่มีการใช้กล้อง)'}); }
-        };
+  <!-- Station QR -->
+  <div class="card" style="text-align:center;margin-bottom:14px">
+    <div class="card-title" style="margin-bottom:12px">QR Code ประจำฐาน (ให้พี่กลุ่มสแกน)</div>
+    <div style="display:flex;justify-content:center">
+      <div class="qr-wrap"><div id="sl-qrcode"></div></div>
+    </div>
+    <p style="font-size:0.75rem;color:var(--muted);margin-top:10px" id="sl-qr-text"></p>
+  </div>
 
-        window.loadDashboard = async function() {
-            var content = document.getElementById('dash-content');
-            content.innerHTML = '<div class="text-center text-textMuted mt-10"><i class="fas fa-circle-notch fa-spin text-3xl mb-3 text-primary"></i><p class="text-xs tracking-widest">FETCHING DATA...</p></div>';
-            var res = await window.apiCall('getDashboard', {studentId: window.currentUser.studentId});
-            if(!res.success) return content.innerHTML = '<p class="text-red-500 text-center mt-10">' + res.message + '</p>';
-            
-            var d = res.data;
-            if(d.role === 'student') {
-                var gName = d.group ? d.group.name : '<span class="text-red-400">ยังไม่มีกลุ่ม</span>';
-                var gScore = d.group ? d.group.score : 0;
-                var gLoc = d.group ? (d.group.currentStationName || d.group.currentStationId || 'จุดเริ่มต้น') : '-';
-                
-                var html = '<div class="glass-panel p-5 rounded-2xl"><p class="text-xs text-textMuted mb-1">สังกัดปัจจุบัน</p><h3 class="text-xl font-bold text-primary mb-4">' + gName + '</h3>' +
-                '<div class="flex justify-between border-t border-gray-800 pt-4"><div><p class="text-[10px] text-textMuted uppercase tracking-wider">Score</p><p class="text-xl font-mono text-white">' + gScore + ' PTS</p></div>' +
-                '<div class="text-right"><p class="text-[10px] text-textMuted uppercase tracking-wider">Current Station</p><p class="text-sm text-emerald-400 font-bold">' + gLoc + '</p></div></div></div>' +
-                '<h4 class="text-xs text-textMuted font-bold uppercase tracking-widest mt-6 mb-3 px-1"><i class="fas fa-history mr-2"></i>Mission History</h4><div class="space-y-2">';
-                if(d.group && d.completedNames && d.completedNames.length > 0) { d.completedNames.forEach(function(n) { html += '<div class="glass-panel p-3 rounded-xl border-l-2 border-l-primary flex items-center"><i class="fas fa-check-circle text-primary mr-3"></i><p class="text-sm">' + n + '</p></div>'; }); } else { html += '<div class="text-center text-xs text-gray-600 py-4">NO RECORDS</div>'; }
-                content.innerHTML = html + '</div>';
-            } 
-            else if(d.role === 'mentor') {
-                var html = '<div class="glass-panel p-5 rounded-2xl mb-4 border-l-2 border-l-accent"><p class="text-xs text-textMuted mb-1">บริหารจัดการกลุ่ม</p><h3 class="text-xl font-bold text-accent">' + (d.group ? d.group.name : '<span class="text-red-400">ยังไม่ระบุกลุ่ม</span>') + '</h3>' +
-                '<p class="text-sm mt-2"><span class="text-textMuted">คะแนน:</span> <span class="font-mono text-white">' + (d.group ? d.group.score : 0) + '</span></p></div>' +
-                '<h4 class="text-xs text-textMuted font-bold uppercase tracking-widest mt-4 mb-3 px-1"><i class="fas fa-users mr-2"></i>Members (' + (d.students ? d.students.length : 0) + ')</h4><div class="space-y-2">';
-                if(d.students && d.students.length > 0) { d.students.forEach(function(s) { html += '<div class="glass-panel p-3 rounded-xl flex justify-between"><span class="text-sm font-bold">' + s.id + '</span><span class="text-xs text-textMuted">' + s.name + '</span></div>'; }); } else { html += '<div class="text-center text-xs text-gray-600 py-4">NO MEMBERS</div>'; }
-                content.innerHTML = html + '</div>';
-            }
-            else if(d.role === 'station_master') {
-                window.myStationId = d.station ? d.station.id : null;
-                var html = '<div class="glass-panel p-5 rounded-2xl mb-4 border-l-2 border-l-amber-500"><p class="text-xs text-textMuted mb-1">ประจำการฐาน</p><h3 class="text-xl font-bold text-amber-500">' + (d.station ? d.station.name : '<span class="text-red-400">ยังไม่ได้ผูกฐาน</span>') + '</h3></div>' +
-                '<h4 class="text-xs text-textMuted font-bold uppercase tracking-widest mt-4 mb-3 px-1"><i class="fas fa-list-alt mr-2"></i>Passed Groups</h4><div class="space-y-2">';
-                if(d.history && d.history.length > 0) { d.history.forEach(function(h) { html += '<div class="glass-panel p-3 rounded-xl flex justify-between items-center"><div><p class="text-sm font-bold text-white">' + h.groupName + '</p><p class="text-[10px] text-textMuted">' + new Date(h.ts).toLocaleTimeString('th-TH') + '</p></div><span class="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded">+10 PTS</span></div>'; }); } else { html += '<div class="text-center text-xs text-gray-600 py-4">NO GROUPS YET</div>'; }
-                content.innerHTML = html + '</div>';
-            }
-            else if(d.role === 'admin') {
-                content.innerHTML = '<div class="glass-panel p-4 rounded-xl mb-4"><h3 class="font-bold text-white mb-3"><i class="fas fa-cogs text-emerald-500 mr-2"></i> เมนูจัดการระบบ</h3>' +
-                '<div class="grid grid-cols-2 gap-2 mb-4">' +
-                '<button onclick="window.showAdminUI(\'createUser\')" class="bg-emerald-500/20 text-emerald-400 py-2 rounded-lg font-bold border border-emerald-500/30 text-sm"><i class="fas fa-user-plus mr-1"></i> สร้างผู้ใช้</button>' +
-                '<button onclick="window.showAdminUI(\'createStation\')" class="bg-amber-500/20 text-amber-400 py-2 rounded-lg font-bold border border-amber-500/30 text-sm"><i class="fas fa-map-pin mr-1"></i> สร้างฐาน</button>' +
-                '<button onclick="window.showAdminUI(\'setRoute\')" class="bg-accent/20 text-blue-400 py-2 rounded-lg font-bold border border-accent/30 text-sm col-span-2"><i class="fas fa-route mr-1"></i> กำหนดฐานให้กลุ่ม</button>' +
-                '<button onclick="window.loadAdminData(\'users\')" class="bg-gray-800 text-gray-300 py-2 rounded-lg font-bold text-sm"><i class="fas fa-users mr-1"></i> ดูผู้ใช้</button>' +
-                '<button onclick="window.loadAdminData(\'stations\')" class="bg-gray-800 text-gray-300 py-2 rounded-lg font-bold text-sm"><i class="fas fa-list mr-1"></i> ดูฐาน</button></div>' +
-                '<div id="admin-workspace"></div></div><div id="admin-view"></div>';
-            }
-        };
+  <!-- Location -->
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-title" style="margin-bottom:10px">📍 ที่ตั้งฐานของคุณ</div>
+    <div class="map-wrap">
+      <iframe id="sl-map-iframe" src=""></iframe>
+      <div id="sl-map-placeholder" class="map-placeholder">📍 ยังไม่มีพิกัด (ให้ Admin ตั้ง)</div>
+    </div>
+  </div>
 
-        window.showAdminUI = async function(type) {
-            var space = document.getElementById('admin-workspace'); document.getElementById('admin-view').innerHTML = '';
-            if(type === 'createUser') {
-                space.innerHTML = '<div class="border-t border-gray-700 pt-4 space-y-3 fade-in"><h4 class="font-bold text-emerald-400">ฟอร์มสร้างผู้ใช้ใหม่</h4>' +
-                '<input type="text" id="add-u-id" placeholder="รหัสผู้ใช้" class="input-dark w-full p-2 rounded-lg text-sm"><input type="text" id="add-u-name" placeholder="ชื่อ-สกุล" class="input-dark w-full p-2 rounded-lg text-sm">' +
-                '<input type="password" id="add-u-pwd" placeholder="ตั้งรหัสผ่าน" class="input-dark w-full p-2 rounded-lg text-sm"><select id="add-u-role" class="input-dark w-full p-2 rounded-lg text-sm"><option value="student">นักเรียน</option><option value="station_master">พี่ฐาน</option><option value="mentor">พี่เลี้ยง</option><option value="admin">แอดมิน</option></select>' +
-                '<button onclick="window.submitAdminCreate(\'user\')" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 rounded-lg">บันทึกข้อมูล</button></div>';
-            } else if(type === 'createStation') {
-                space.innerHTML = '<div class="border-t border-gray-700 pt-4 space-y-3 fade-in"><h4 class="font-bold text-amber-400">ฟอร์มสร้างฐานกิจกรรม</h4>' +
-                '<input type="text" id="add-s-id" placeholder="รหัสฐาน (เช่น station_02)" class="input-dark w-full p-2 rounded-lg text-sm"><input type="text" id="add-s-name" placeholder="ชื่อฐาน" class="input-dark w-full p-2 rounded-lg text-sm"><input type="text" id="add-s-master" placeholder="รหัสพี่ฐาน (ไม่บังคับ)" class="input-dark w-full p-2 rounded-lg text-sm">' +
-                '<button onclick="window.submitAdminCreate(\'station\')" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 rounded-lg">บันทึกข้อมูล</button></div>';
-            } else if(type === 'setRoute') {
-                space.innerHTML = '<p class="text-center text-accent mt-4"><i class="fas fa-spinner fa-spin"></i> Loading Data...</p>';
-                var res = await window.apiCall('adminList', {});
-                if(res.success) {
-                    var gOpts = res.groups.map(function(g){return '<option value="'+g.id+'">'+g.name+'</option>';}).join('');
-                    var sOpts = '<option value="">-- ไม่ระบุ / จุดเริ่มต้น --</option>' + res.stations.map(function(s){return '<option value="'+s.id+'">'+s.name+'</option>';}).join('');
-                    space.innerHTML = '<div class="border-t border-gray-700 pt-4 space-y-3 fade-in"><h4 class="font-bold text-accent">ตั้งค่าฐานปัจจุบันของกลุ่ม</h4>' +
-                    '<select id="route-g" class="input-dark w-full p-2 rounded-lg text-sm">' + gOpts + '</select>' +
-                    '<select id="route-s" class="input-dark w-full p-2 rounded-lg text-sm">' + sOpts + '</select>' +
-                    '<button onclick="window.submitAdminSetRoute()" class="w-full bg-accent hover:bg-blue-600 text-white font-bold py-2 rounded-lg">บันทึกตำแหน่ง</button></div>';
-                }
-            }
-        };
+  <!-- Groups at station -->
+  <div class="card">
+    <div class="card-title" style="margin-bottom:12px">🎯 กลุ่มที่กำลังเข้าฐานตอนนี้</div>
+    <div id="sl-groups-here"></div>
+  </div>
+</div>
 
-        window.submitAdminCreate = async function(type) {
-    if(type === 'user') {
-        var uid = document.getElementById('add-u-id').value; 
-        var name = document.getElementById('add-u-name').value; 
-        var pwd = document.getElementById('add-u-pwd').value; 
-        var role = document.getElementById('add-u-role').value;
-        if(!uid || !name || !pwd) return window.showModal({type:'warning', title:'เตือน', text:'กรอกข้อมูลให้ครบ'});
-        // แก้จาก req.id เป็นการส่ง object ที่ตรงกับหลังบ้าน
-        var res = await window.apiCall('adminCreateUser', {id: uid, name: name, password: pwd, role: role});
-        if(res.success) { window.showModal({type:'success', title:'สำเร็จ', text:res.message}); document.getElementById('admin-workspace').innerHTML=''; window.loadAdminData('users'); } 
-        else { window.showModal({type:'error', title:'ล้มเหลว', text:res.message}); }
-    } else {
-        var sid = document.getElementById('add-s-id').value; 
-        var sname = document.getElementById('add-s-name').value; 
-        var smaster = document.getElementById('add-s-master').value;
-        if(!sid || !sname) return window.showModal({type:'warning', title:'เตือน', text:'กรอกรหัสและชื่อฐาน'});
-        var res = await window.apiCall('adminCreateStation', {id: sid, name: sname, masterId: smaster});
-        if(res.success) { window.showModal({type:'success', title:'สำเร็จ', text:res.message}); document.getElementById('admin-workspace').innerHTML=''; window.loadAdminData('stations'); } 
-        else { window.showModal({type:'error', title:'ล้มเหลว', text:res.message}); }
-    }
+<!-- ==================== ADMIN PAGE ==================== -->
+<div id="page-admin" class="page wide hidden fade-in">
+  <div class="section-header">
+    <h2>⚙️ Admin Panel</h2>
+    <p>จัดการระบบเกมรับน้อง Freshy In '69</p>
+  </div>
+
+  <div class="admin-tabs">
+    <button class="admin-tab active" onclick="adminTab('overview')">📊 ภาพรวม</button>
+    <button class="admin-tab" onclick="adminTab('stations')">🏔️ จัดการฐาน</button>
+    <button class="admin-tab" onclick="adminTab('groups')">👥 จัดการกลุ่ม</button>
+    <button class="admin-tab" onclick="adminTab('users')">🙋 จัดการผู้ใช้</button>
+  </div>
+
+  <!-- OVERVIEW TAB -->
+  <div id="admin-overview">
+    <div id="admin-stats-row" class="stats-row" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px"></div>
+    <div class="card">
+      <div class="card-title" style="margin-bottom:12px">สถานะทุกกลุ่ม</div>
+      <div id="admin-all-groups"></div>
+    </div>
+  </div>
+
+  <!-- STATIONS TAB -->
+  <div id="admin-stations" class="hidden">
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title" style="margin-bottom:12px">➕ สร้างฐานใหม่</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="field"><label>รหัสฐาน</label><input id="ns-id" placeholder="ST01"></div>
+        <div class="field"><label>ชื่อฐาน</label><input id="ns-name" placeholder="ฐานมังกรเพลิง"></div>
+        <div class="field"><label>Emoji ไอคอน</label><input id="ns-emoji" placeholder="🐉" maxlength="4"></div>
+        <div class="field"><label>ละติจูด</label><input id="ns-lat" type="number" placeholder="7.0066" step="0.0001"></div>
+        <div class="field"><label>ลองจิจูด</label><input id="ns-lng" type="number" placeholder="100.4730" step="0.0001"></div>
+        <div class="field"><label>คำอธิบายฐาน</label><input id="ns-desc" placeholder="กิจกรรมอะไร"></div>
+      </div>
+      <button class="btn btn-primary" onclick="adminCreateStation()">✅ บันทึกฐาน</button>
+    </div>
+    <div id="admin-stations-list"></div>
+  </div>
+
+  <!-- GROUPS TAB -->
+  <div id="admin-groups" class="hidden">
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title" style="margin-bottom:12px">➕ สร้างกลุ่มใหม่</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="field"><label>รหัสกลุ่ม</label><input id="ng-id" placeholder="G01"></div>
+        <div class="field"><label>ชื่อกลุ่ม</label><input id="ng-name" placeholder="กลุ่มมังกร"></div>
+        <div class="field" style="grid-column:1/-1"><label>เส้นทาง (รหัสฐาน คั่นด้วยจุลภาค)</label><input id="ng-route" placeholder="ST01,ST02,ST03,ST04"></div>
+      </div>
+      <button class="btn btn-primary" onclick="adminCreateGroup()">✅ สร้างกลุ่ม</button>
+    </div>
+    <div id="admin-groups-list"></div>
+  </div>
+
+  <!-- USERS TAB -->
+  <div id="admin-users" class="hidden">
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title" style="margin-bottom:12px">🔑 เปลี่ยน Role ผู้ใช้</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="field"><label>Username</label><input id="ur-user" placeholder="username ของผู้ใช้"></div>
+        <div class="field"><label>Role ใหม่</label>
+          <select id="ur-role">
+            <option value="student">น้อง 69</option>
+            <option value="group_leader">พี่กลุ่ม</option>
+            <option value="station_leader">พี่ฐาน</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="field"><label>รหัสกลุ่ม / รหัสฐาน ที่รับผิดชอบ</label><input id="ur-target" placeholder="G01 หรือ ST01 (ถ้ามี)"></div>
+      </div>
+      <button class="btn btn-gold" onclick="adminSetRole()">💾 บันทึก Role</button>
+    </div>
+    <div id="admin-users-list"></div>
+  </div>
+</div>
+
+<!-- ==================== LEADERBOARD PAGE ==================== -->
+<div id="page-leaderboard" class="lb-bg hidden fade-in" style="max-width:none">
+  <div class="lb-header">
+    <div class="lb-title">🏆 LEADERBOARD</div>
+    <div style="font-size:0.85rem;color:var(--muted);margin-top:4px;letter-spacing:2px">FRESHY IN '69 · LIVE</div>
+  </div>
+  <div id="lb-cards" class="lb-cards"></div>
+  <div style="text-align:center;padding-bottom:20px">
+    <button class="btn btn-ghost btn-sm" onclick="hideLB()" style="width:auto">← กลับ</button>
+  </div>
+</div>
+
+</div><!-- #app -->
+
+<!-- ==================== SCANNER MODAL ==================== -->
+<div id="scanner-modal" class="hidden">
+  <div id="scanner-header">
+    <span style="color:white;font-weight:800;font-size:1rem">📷 สแกน QR Code</span>
+    <button onclick="stopScanner()" style="background:var(--red);color:white;border:none;border-radius:8px;padding:6px 14px;font-weight:800;cursor:pointer">✕ ปิด</button>
+  </div>
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;background:#000">
+    <div id="qr-reader" style="width:min(100vw,400px)"></div>
+  </div>
+</div>
+
+<!-- ==================== MODAL ==================== -->
+<div id="modal-overlay" class="hidden">
+  <div id="modal-box">
+    <div id="modal-title">Title</div>
+    <div id="modal-body">Body</div>
+    <div id="modal-actions"></div>
+  </div>
+</div>
+
+<script>
+// =======================================
+// FIREBASE INIT
+// =======================================
+const firebaseConfig = {
+  apiKey: "AIzaSyDwfrwaZ75f8XjtvlXTiY03Q1NZsepHrW8",
+  authDomain: "freshy-in-90bdb.firebaseapp.com",
+  databaseURL: "https://freshy-in-90bdb-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "freshy-in-90bdb",
+  storageBucket: "freshy-in-90bdb.firebasestorage.app",
+  messagingSenderId: "282943960199",
+  appId: "1:282943960199:web:bc974dc466f75129d2f422"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// =======================================
+// GLOBAL STATE
+// =======================================
+let currentUser = null;
+let html5QrCode = null;
+let scannerMode = '';
+let activeListeners = [];
+
+// Station icons library
+const STATION_ICONS = ['🐉','⚡','🔥','🌊','🌿','🎯','🏹','🎪','🌙','⭐','🦁','🦅','🌋','🎭','🎵','🏆','💎','🗡️','🛡️','🔮'];
+
+// =======================================
+// MODAL UTILITY
+// =======================================
+function showModal(title, body, actions) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').innerHTML = body;
+  document.getElementById('modal-actions').innerHTML = actions || '<button class="btn btn-ghost" onclick="closeModal()">ปิด</button>';
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+function closeModal() {
+  document.getElementById('modal-overlay').classList.add('hidden');
+}
+
+// =======================================
+// LOGIN / REGISTER
+// =======================================
+function switchLoginTab(t) {
+  document.getElementById('login-form').classList.toggle('hidden', t !== 'login');
+  document.getElementById('register-form').classList.toggle('hidden', t !== 'register');
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', (i===0&&t==='login')||(i===1&&t==='register')));
+}
+
+window.onload = () => {
+  const saved = localStorage.getItem('freshy69_user');
+  if (saved) { currentUser = JSON.parse(saved); routeUser(); }
 };
 
-        window.submitAdminSetRoute = async function() {
-            var gid = document.getElementById('route-g').value; var sid = document.getElementById('route-s').value;
-            if(!gid) return window.showModal({type:'warning', title:'เตือน', text:'กรุณาเลือกกลุ่ม'});
-            var res = await window.apiCall('adminSetGroupStation', {groupId: gid, stationId: sid});
-            if(res.success) { window.showModal({type:'success', title:'สำเร็จ', text:res.message}); document.getElementById('admin-workspace').innerHTML=''; } 
-            else { window.showModal({type:'error', title:'ล้มเหลว', text:res.message}); }
-        };
+async function doLogin() {
+  const u = document.getElementById('l-user').value.trim();
+  const p = document.getElementById('l-pass').value.trim();
+  if (!u || !p) return showModal('แจ้งเตือน','กรุณากรอกข้อมูลให้ครบ');
 
-        window.loadAdminData = async function(target) {
-            var v = document.getElementById('admin-view'); document.getElementById('admin-workspace').innerHTML = '';
-            v.innerHTML = '<p class="text-center text-xs text-primary"><i class="fas fa-spinner fa-spin"></i> FETCHING...</p>';
-            var res = await window.apiCall('adminList', {});
-            if(res.success) {
-                var html = '';
-                if(target === 'users') {
-                    html += '<h4 class="text-xs text-textMuted font-bold uppercase tracking-widest mb-2 mt-2 px-1 border-b border-gray-800 pb-2">User Database</h4><div class="space-y-2">';
-                    res.users.forEach(function(u) { html += '<div class="glass-panel p-2 rounded-lg flex justify-between items-center"><div><p class="text-sm font-bold text-gray-300">' + u.studentId + '</p><p class="text-[10px] text-gray-500">' + u.name + '</p></div><span class="text-[9px] uppercase px-2 py-1 rounded bg-gray-800 text-' + (u.role==='admin'?'red-400':'primary') + '">' + u.role + '</span></div>'; });
-                } else if(target === 'stations') {
-                    html += '<h4 class="text-xs text-textMuted font-bold uppercase tracking-widest mb-2 mt-2 px-1 border-b border-gray-800 pb-2">Stations Overview</h4><div class="space-y-2">';
-                    res.stations.forEach(function(s) { html += '<div class="glass-panel p-2 rounded-lg flex justify-between"><p class="text-sm font-bold text-gray-300">' + s.name + '</p><p class="text-xs text-amber-500">' + (s.masterId || '-') + '</p></div>'; });
-                }
-                v.innerHTML = html + '</div>';
-            } else { v.innerHTML = '<p class="text-red-500 text-xs">' + res.message + '</p>'; }
-        };
+  if (u === 'admin' && p === 'admin1234') {
+    setupSession({ username: 'admin', role: 'admin', name: 'Admin' });
+    return;
+  }
+  const snap = await db.ref(`users/${u}`).once('value');
+  if (!snap.exists()) return showModal('ข้อผิดพลาด','ไม่พบผู้ใช้นี้ในระบบ');
+  const data = snap.val();
+  if (data.password !== p) return showModal('ข้อผิดพลาด','รหัสผ่านไม่ถูกต้อง');
+  setupSession({ ...data, username: u });
+}
 
-        // --- CAMERA SCANNER LOGIC ---
-        window.startScanner = async function() {
-            document.getElementById('modal-scanner').classList.remove('hidden');
-            var st = document.getElementById('scanner-status'); 
-            st.innerHTML = '<i class="fas fa-circle-notch fa-spin text-primary mr-2"></i> REQUESTING PERMISSION...';
-            
-            try {
-                // บังคับขอสิทธิ์กล้อง ถ้าผ่านจะวิ่งไปเปิดเครื่องสแกนตามปกติ
-                var stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-                stream.getTracks().forEach(function(track) { track.stop(); });
-                if(window.html5QrCode && window.html5QrCode.getState() === 2) { window.html5QrCode.stop().then(window.initScanner).catch(console.error); } else { if(window.html5QrCode) window.html5QrCode.clear(); window.initScanner(); }
-            } catch (err) {
-                // ถ้าโดนปฏิเสธ หรือไม่ได้รันบน HTTPS
-                window.showFallbackCameraUI();
-            }
-        };
+async function doRegister() {
+  const name = document.getElementById('r-name').value.trim();
+  const u    = document.getElementById('r-user').value.trim();
+  const p    = document.getElementById('r-pass').value.trim();
+  const p2   = document.getElementById('r-pass2').value.trim();
+  if (!name||!u||!p) return showModal('แจ้งเตือน','กรุณากรอกข้อมูลให้ครบ');
+  if (p !== p2) return showModal('แจ้งเตือน','รหัสผ่านไม่ตรงกัน');
 
-        window.initScanner = function() {
-            var st = document.getElementById('scanner-status'); window.html5QrCode = new Html5Qrcode("reader");
-            window.html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: {width: 250, height: 250} }, 
-                async function(text) { 
-                    window.closeScanner(); window.showLoader(true);
-                    var res = await window.apiCall('processScan', { studentId: window.currentUser.studentId, qrData: text }); 
-                    window.showLoader(false);
-                    if(res.success) { window.showModal({type:'success', title:'SYSTEM', text:res.message, isConfirm:true, onConfirm:function(){window.loadDashboard();}}); } 
-                    else { window.showModal({type:'error', title:'DENIED', text:res.message}); }
-                }, function(err) {}
-            ).then(function() { st.innerText = "ALIGN QR CODE WITHIN FRAME"; }).catch(function(e) { window.showFallbackCameraUI(); });
-        };
+  const snap = await db.ref(`users/${u}`).once('value');
+  if (snap.exists()) return showModal('แจ้งเตือน','มีผู้ใช้นี้อยู่แล้ว');
 
-        window.showFallbackCameraUI = function() {
-            document.getElementById('scanner-status').innerHTML = 
-            '<div class="bg-surface/90 p-4 rounded-xl border border-gray-700 w-full text-left space-y-3 mt-4 shadow-lg">' +
-                '<p class="text-red-400 font-bold text-sm text-center border-b border-gray-700 pb-2"><i class="fas fa-video-slash mr-1"></i> เบราว์เซอร์บล็อกการเปิดกล้อง</p>' +
-                '<p class="text-xs text-gray-300"><b>💡 ทางเลือก: ถ่ายรูปแทน</b><br>ระบบจะเปิดแอปกล้องในเครื่องให้ถ่ายรูป QR แทนครับ</p>' +
-                '<label class="flex justify-center items-center bg-primary hover:bg-emerald-500 px-4 py-3 rounded-lg text-bgDark cursor-pointer text-sm font-bold shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all">' +
-                    '<i class="fas fa-camera mr-2 text-lg"></i> กดถ่ายรูป QR Code<input type="file" accept="image/*" capture="environment" class="hidden" onchange="window.scanFromFile(event)">' +
-                '</label>' +
-            '</div>';
-        };
+  const userData = { name, password: p, role: 'student', targetId: null };
+  await db.ref(`users/${u}`).set(userData);
+  setupSession({ ...userData, username: u });
+}
 
-        window.scanFromFile = function(e) {
-            if(e.target.files.length === 0) return; window.showLoader(true);
-            window.html5QrCode.scanFile(e.target.files[0], true).then(async function(text) { 
-                window.closeScanner(); var res = await window.apiCall('processScan', { studentId: window.currentUser.studentId, qrData: text }); window.showLoader(false);
-                if(res.success) { window.showModal({type:'success', title:'SYSTEM', text:res.message, isConfirm:true, onConfirm:function(){window.loadDashboard();}}); } 
-                else { window.showModal({type:'error', title:'DENIED', text:res.message}); }
-            }).catch(function(err) { window.showLoader(false); window.showModal({ type: 'error', title: 'FAILED', text: 'ไม่พบ QR Code ในรูปภาพ กรุณาถ่ายใหม่ให้ชัดเจน' }); });
-        };
+function setupSession(user) {
+  currentUser = user;
+  localStorage.setItem('freshy69_user', JSON.stringify(user));
+  routeUser();
+}
 
-        window.closeScanner = function() {
-            document.getElementById('modal-scanner').classList.add('hidden');
-            if (window.html5QrCode) { if(window.html5QrCode.getState() === 2) { window.html5QrCode.stop().then(function(){ window.html5QrCode.clear(); window.html5QrCode=null; }); } else { window.html5QrCode.clear(); window.html5QrCode=null; } }
-        };
-    </script>
+function logout() {
+  // Detach listeners
+  activeListeners.forEach(ref => ref.off());
+  activeListeners = [];
+  localStorage.removeItem('freshy69_user');
+  currentUser = null;
+  showPage('login');
+  document.getElementById('nav-chip').classList.add('hidden');
+  document.getElementById('nav-logout').classList.add('hidden');
+  document.getElementById('nav-lb').classList.add('hidden');
+}
+
+// =======================================
+// ROUTING
+// =======================================
+function routeUser() {
+  const chip = document.getElementById('nav-chip');
+  chip.textContent = `${currentUser.name || currentUser.username}`;
+  chip.classList.remove('hidden');
+  document.getElementById('nav-logout').classList.remove('hidden');
+
+  if (currentUser.role === 'admin') {
+    document.getElementById('nav-lb').classList.remove('hidden');
+    showPage('admin');
+    initAdmin();
+  } else if (currentUser.role === 'station_leader') {
+    showPage('station');
+    initStation();
+  } else if (currentUser.role === 'group_leader') {
+    document.getElementById('nav-lb').classList.remove('hidden');
+    showPage('group');
+    initGroupLeader();
+  } else {
+    // student
+    showPage('student');
+    initStudent();
+  }
+}
+
+function showPage(name) {
+  document.querySelectorAll('[id^="page-"]').forEach(el => el.classList.add('hidden'));
+  const el = document.getElementById(`page-${name}`);
+  if (el) el.classList.remove('hidden');
+}
+
+// =======================================
+// STUDENT VIEW
+// =======================================
+function initStudent() {
+  const u = currentUser;
+  document.getElementById('st-name').textContent = u.name || u.username;
+
+  if (!u.targetId) {
+    document.getElementById('st-nogroup').classList.remove('hidden');
+    document.getElementById('st-ingroup').classList.add('hidden');
+    document.getElementById('st-group-label').textContent = 'ยังไม่มีกลุ่ม';
+    return;
+  }
+
+  document.getElementById('st-nogroup').classList.add('hidden');
+  document.getElementById('st-ingroup').classList.remove('hidden');
+
+  const gRef = db.ref(`groups/${u.targetId}`);
+  activeListeners.push(gRef);
+  gRef.on('value', async snap => {
+    if (!snap.exists()) return;
+    const g = snap.val();
+    document.getElementById('st-group-label').textContent = `กลุ่ม ${g.name}`;
+    await renderGroupView(g, 'st');
+
+    // Stamps
+    await renderStamps(g, u.targetId);
+  });
+}
+
+async function renderGroupView(g, prefix) {
+  const route = g.route || [];
+  const idx = g.currentRouteIdx || 0;
+  const isDone = idx >= route.length;
+
+  // Status badge
+  const badge = document.getElementById(`${prefix}-status-badge`);
+  if (isDone) {
+    badge.className = 'badge badge-done'; badge.textContent = '✅ จบกิจกรรมแล้ว!';
+  } else if (g.status === 'at_station') {
+    badge.className = 'badge badge-at-station'; badge.textContent = '🏔️ กำลังเข้าฐาน';
+  } else {
+    badge.className = 'badge badge-moving'; badge.textContent = '🚶 กำลังเดินทาง';
+  }
+
+  // Current / Next
+  let currId = null, nextId = null, currName = '-', nextName = '-';
+  if (!isDone) {
+    if (g.status === 'at_station') {
+      currId = route[idx];
+      nextId = route[idx+1] || null;
+    } else {
+      nextId = route[idx];
+    }
+  }
+
+  const stationsData = {};
+  for (const sid of [...new Set([currId, nextId].filter(Boolean))]) {
+    const s = await db.ref(`stations/${sid}`).once('value');
+    if (s.exists()) stationsData[sid] = s.val();
+  }
+
+  if (currId && stationsData[currId]) {
+    currName = `${stationsData[currId].emoji||'🏔️'} ${stationsData[currId].name}`;
+  } else if (isDone) { currName = '✅ จบแล้ว'; }
+  else if (g.status === 'moving') { currName = '🚶 เดินทาง'; }
+
+  if (nextId && stationsData[nextId]) {
+    nextName = `${stationsData[nextId].emoji||'🏔️'} ${stationsData[nextId].name}`;
+  } else if (isDone || !nextId) { nextName = '🎉 จบกิจกรรม'; }
+
+  document.getElementById(`${prefix}-curr`).textContent = currName;
+  document.getElementById(`${prefix}-next`).textContent = nextName;
+
+  // Progress text (for student)
+  const prog = document.getElementById(`${prefix}-route-progress`);
+  if (prog) prog.textContent = `${Math.min(idx,route.length)}/${route.length} ฐาน`;
+
+  // Route bar
+  const bar = document.getElementById(`${prefix}-route-bar`);
+  bar.innerHTML = '';
+  for (let i = 0; i < route.length; i++) {
+    const s = await db.ref(`stations/${route[i]}`).once('value');
+    const sdata = s.val() || {};
+    const label = sdata.name || route[i];
+    const emoji = sdata.emoji || '🏔️';
+
+    let dotClass = 'route-dot';
+    if (i < idx) dotClass += ' done';
+    else if (i === idx && !isDone) dotClass += (g.status==='at_station'?' current':' next');
+    else if (i === idx && isDone) dotClass += ' done';
+
+    const node = document.createElement('div');
+    node.className = 'route-node';
+    node.innerHTML = `<div class="${dotClass}">${i<idx?'✓':emoji}</div><div class="route-label">${label}</div>`;
+    bar.appendChild(node);
+
+    if (i < route.length - 1) {
+      const line = document.createElement('div');
+      line.className = 'route-line' + (i < idx ? ' done' : '');
+      bar.appendChild(line);
+    }
+  }
+
+  // Map - show target station
+  const mapTargetId = g.status === 'at_station' ? currId : nextId;
+  const mapTargetData = mapTargetId ? stationsData[mapTargetId] : null;
+  updateMap(prefix, mapTargetData);
+
+  // Member count (group leader only)
+  const mc = document.getElementById(`${prefix}-member-count`);
+  if (mc) mc.textContent = g.members ? Object.keys(g.members).length : 0;
+  const sd = document.getElementById(`${prefix}-station-done`);
+  if (sd) sd.textContent = Math.min(idx, route.length);
+  const st2 = document.getElementById(`${prefix}-station-total`);
+  if (st2) st2.textContent = route.length;
+
+  // Members list (group leader)
+  const ml = document.getElementById(`${prefix}-members-list`);
+  if (ml) {
+    ml.innerHTML = '';
+    if (g.members) {
+      Object.entries(g.members).forEach(([uid, m]) => {
+        ml.innerHTML += `<div class="list-item"><div class="info"><div class="name">👤 ${m.name}</div></div></div>`;
+      });
+    } else {
+      ml.innerHTML = '<p style="color:var(--muted);font-size:0.85rem;text-align:center;padding:10px">ยังไม่มีน้องในกลุ่ม</p>';
+    }
+  }
+}
+
+async function renderStamps(g, groupId) {
+  const grid = document.getElementById('st-stamp-grid');
+  if (!grid) return;
+  const route = g.route || [];
+  const doneIdx = g.currentRouteIdx || 0;
+  grid.innerHTML = '';
+
+  for (let i = 0; i < route.length; i++) {
+    const s = await db.ref(`stations/${route[i]}`).once('value');
+    const sdata = s.val() || {};
+    const earned = i < doneIdx || (i === doneIdx && g.status === 'at_station');
+    const div = document.createElement('div');
+    div.className = 'stamp' + (earned ? ' earned' : '');
+    div.innerHTML = `
+      <div class="stamp-icon">${sdata.emoji || '🏔️'}</div>
+      <div class="stamp-label">${sdata.name || route[i]}</div>
+      ${earned ? '<div class="stamp-check">✓</div>' : ''}
+    `;
+    grid.appendChild(div);
+  }
+}
+
+function updateMap(prefix, stData) {
+  const iframe = document.getElementById(`${prefix}-map-iframe`);
+  const placeholder = document.getElementById(`${prefix}-map-placeholder`);
+  const navBtn = document.getElementById(`${prefix}-nav-btn`);
+  if (!iframe) return;
+
+  if (stData && stData.lat && stData.lng) {
+    placeholder.classList.add('hidden');
+    iframe.src = `https://maps.google.com/maps?q=${stData.lat},${stData.lng}&z=17&output=embed`;
+    if (navBtn) {
+      navBtn.classList.remove('hidden');
+      navBtn.href = `https://www.google.com/maps/dir/?api=1&destination=${stData.lat},${stData.lng}`;
+    }
+  } else {
+    placeholder.classList.remove('hidden');
+    iframe.src = '';
+    if (navBtn) navBtn.classList.add('hidden');
+  }
+}
+
+// =======================================
+// GROUP LEADER VIEW
+// =======================================
+function initGroupLeader() {
+  const u = currentUser;
+  document.getElementById('gl-name').textContent = `กลุ่ม ${u.targetId || '?'}`;
+  document.getElementById('gl-sub').textContent = `พี่กลุ่ม: ${u.name || u.username}`;
+
+  if (!u.targetId) return showModal('แจ้งเตือน','คุณยังไม่ได้รับมอบหมายกลุ่ม ติดต่อ Admin');
+
+  const gRef = db.ref(`groups/${u.targetId}`);
+  activeListeners.push(gRef);
+  gRef.on('value', async snap => {
+    if (!snap.exists()) return;
+    const g = snap.val();
+    document.getElementById('gl-name').textContent = `กลุ่ม ${g.name}`;
+    await renderGroupView(g, 'gl');
+  });
+}
+
+function showGroupQR() {
+  const body = `
+    <div style="display:flex;justify-content:center;background:white;padding:16px;border-radius:12px">
+      <div id="modal-qr-wrap"></div>
+    </div>
+    <p style="text-align:center;margin-top:10px;font-size:0.8rem;color:var(--muted)">ให้น้องสแกนเพื่อเข้ากลุ่ม ${currentUser.targetId}</p>
+  `;
+  showModal('QR เข้ากลุ่ม', body, '<button class="btn btn-ghost" onclick="closeModal()">ปิด</button>');
+  setTimeout(() => {
+    const el = document.getElementById('modal-qr-wrap');
+    if (el && el.children.length === 0) {
+      new QRCode(el, { text: `JOIN_GROUP:${currentUser.targetId}`, width: 220, height: 220 });
+    }
+  }, 100);
+}
+
+// =======================================
+// STATION LEADER VIEW
+// =======================================
+function initStation() {
+  const u = currentUser;
+  const stId = u.targetId;
+  if (!stId) return showModal('แจ้งเตือน','คุณยังไม่ได้รับมอบหมายฐาน ติดต่อ Admin');
+
+  document.getElementById('sl-id').textContent = `รหัสฐาน: ${stId}`;
+  document.getElementById('sl-qr-text').textContent = `STATION:${stId}`;
+
+  // Station QR
+  const qrEl = document.getElementById('sl-qrcode');
+  if (qrEl.children.length === 0) {
+    new QRCode(qrEl, { text: `STATION:${stId}`, width: 200, height: 200 });
+  }
+
+  // Station info
+  const stRef = db.ref(`stations/${stId}`);
+  activeListeners.push(stRef);
+  stRef.on('value', snap => {
+    if (!snap.exists()) return;
+    const st = snap.val();
+    document.getElementById('sl-name').textContent = `${st.emoji||'🏔️'} ${st.name}`;
+    updateMap('sl', st);
+  });
+
+  // Groups at this station
+  const gRef = db.ref('groups');
+  activeListeners.push(gRef);
+  gRef.on('value', snap => {
+    const container = document.getElementById('sl-groups-here');
+    container.innerHTML = '';
+    let found = false;
+    snap.forEach(child => {
+      const g = child.val();
+      const gId = child.key;
+      const route = g.route || [];
+      const idx = g.currentRouteIdx || 0;
+      if (g.status === 'at_station' && route[idx] === stId) {
+        found = true;
+        const memberCount = g.members ? Object.keys(g.members).length : 0;
+        const div = document.createElement('div');
+        div.className = 'group-incoming';
+        div.innerHTML = `
+          <div class="group-info">
+            <h4>กลุ่ม ${g.name}</h4>
+            <p>👥 น้อง ${memberCount} คน · กำลังทำกิจกรรม</p>
+          </div>
+          <button class="btn btn-red btn-sm" onclick="releaseGroup('${gId}',${idx})">✅ ปล่อยน้อง</button>
+        `;
+        container.appendChild(div);
+      }
+    });
+    if (!found) container.innerHTML = '<p style="color:var(--muted);text-align:center;padding:20px;font-size:0.85rem">ยังไม่มีกลุ่มเข้าฐาน</p>';
+  });
+}
+
+function releaseGroup(groupId, idx) {
+  showModal('ยืนยันปล่อยน้อง','แน่ใจว่าน้องทำกิจกรรมเสร็จแล้ว?',`
+    <button class="btn btn-ghost" onclick="closeModal()">ยกเลิก</button>
+    <button class="btn btn-green" onclick="confirmRelease('${groupId}',${idx})">✅ ยืนยัน</button>
+  `);
+}
+
+function confirmRelease(groupId, idx) {
+  db.ref(`groups/${groupId}`).update({ currentRouteIdx: idx + 1, status: 'moving' });
+  closeModal();
+  showModal('🎉 สำเร็จ','กลุ่มออกจากฐานแล้ว กำลังเดินทางต่อ!');
+}
+
+// =======================================
+// QR SCANNER
+// =======================================
+function startScanner(mode) {
+  scannerMode = mode;
+  document.getElementById('scanner-modal').classList.remove('hidden');
+  html5QrCode = new Html5Qrcode('qr-reader');
+  html5QrCode.start(
+    { facingMode: 'environment' },
+    { fps: 10, qrbox: { width: 250, height: 250 } },
+    onScanSuccess
+  ).catch(() => {
+    stopScanner();
+    showModal('ข้อผิดพลาด','ไม่สามารถเข้าถึงกล้อง กรุณาอนุญาตการใช้กล้อง');
+  });
+}
+
+function stopScanner() {
+  if (html5QrCode) {
+    html5QrCode.stop().then(() => html5QrCode.clear()).catch(() => {});
+  }
+  document.getElementById('scanner-modal').classList.add('hidden');
+}
+
+function onScanSuccess(text) {
+  stopScanner();
+  if ((scannerMode === 'join_group' || scannerMode === 'join_group_anon') && text.startsWith('JOIN_GROUP:')) {
+    const gId = text.split(':')[1];
+    handleJoinGroup(gId);
+  } else if (scannerMode === 'checkin_station' && text.startsWith('STATION:')) {
+    const sId = text.split(':')[1];
+    handleCheckin(sId);
+  } else {
+    showModal('ผิดพลาด','QR Code ไม่ถูกต้องสำหรับคำสั่งนี้');
+  }
+}
+
+async function handleJoinGroup(gId) {
+  const snap = await db.ref(`groups/${gId}`).once('value');
+  if (!snap.exists()) return showModal('ผิดพลาด','ไม่พบกลุ่มนี้');
+  const g = snap.val();
+
+  // If already logged in as student → just assign group
+  if (currentUser && currentUser.role === 'student') {
+    if (currentUser.targetId) return showModal('แจ้งเตือน',`คุณอยู่กลุ่ม ${currentUser.targetId} อยู่แล้ว`);
+    await db.ref(`users/${currentUser.username}`).update({ targetId: gId });
+    await db.ref(`groups/${gId}/members/${currentUser.username}`).set({ name: currentUser.name || currentUser.username });
+    currentUser.targetId = gId;
+    setupSession(currentUser);
+    return;
+  }
+
+  // Anonymous scan → ask name
+  showModal(`ยินดีต้อนรับสู่กลุ่ม ${g.name}!`,`
+    <div class="field"><label>ชื่อเล่น / รหัสนักศึกษา</label><input id="anon-name" type="text" placeholder="ชื่อของคุณ" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px;color:var(--text);width:100%;font-size:0.9rem"></div>
+  `,`
+    <button class="btn btn-ghost" onclick="closeModal()">ยกเลิก</button>
+    <button class="btn btn-primary" onclick="confirmAnonJoin('${gId}')">✅ เข้ากลุ่ม</button>
+  `);
+}
+
+async function confirmAnonJoin(gId) {
+  const name = document.getElementById('anon-name').value.trim();
+  if (!name) return alert('กรุณาใส่ชื่อ');
+  const uid = 'anon_' + Date.now();
+  await db.ref(`groups/${gId}/members/${uid}`).set({ name });
+  setupSession({ username: uid, name, role: 'student', targetId: gId });
+  closeModal();
+}
+
+async function handleCheckin(stId) {
+  const gId = currentUser.targetId;
+  const snap = await db.ref(`groups/${gId}`).once('value');
+  if (!snap.exists()) return showModal('ผิดพลาด','ไม่พบข้อมูลกลุ่ม');
+  const g = snap.val();
+
+  if (g.status === 'at_station') return showModal('แจ้งเตือน','กลุ่มอยู่ในฐานแล้ว ต้องรอพี่ฐานปล่อยก่อน');
+
+  const expectedId = g.route[g.currentRouteIdx];
+  if (stId !== expectedId) {
+    const expSnap = await db.ref(`stations/${expectedId}`).once('value');
+    const expName = expSnap.exists() ? expSnap.val().name : expectedId;
+    return showModal('⚠️ ผิดฐาน!',`คุณสแกนฐานผิด!<br><br>ต้องไปที่ <b style="color:var(--orange)">${expName}</b> ก่อนนะ`);
+  }
+
+  await db.ref(`groups/${gId}`).update({ status: 'at_station' });
+  showModal('🎉 เช็คอินสำเร็จ!',`เข้าฐานเรียบร้อย! พี่ฐานได้รับแจ้งเตือนแล้ว รอทำกิจกรรมได้เลย`);
+}
+
+// =======================================
+// ADMIN
+// =======================================
+function adminTab(tab) {
+  ['overview','stations','groups','users'].forEach(t => {
+    document.getElementById(`admin-${t}`).classList.toggle('hidden', t !== tab);
+  });
+  document.querySelectorAll('.admin-tab').forEach((b,i) => {
+    b.classList.toggle('active', ['overview','stations','groups','users'][i] === tab);
+  });
+}
+
+function initAdmin() {
+  // Stats overview
+  const stRef = db.ref('stations');
+  const gRef = db.ref('groups');
+  const uRef = db.ref('users');
+  activeListeners.push(stRef, gRef, uRef);
+
+  gRef.on('value', snap => {
+    const groups = [];
+    snap.forEach(c => groups.push({ id: c.key, ...c.val() }));
+    renderAdminOverview(groups);
+    renderAdminGroupsList(groups);
+  });
+
+  stRef.on('value', snap => {
+    const stations = [];
+    snap.forEach(c => stations.push({ id: c.key, ...c.val() }));
+    renderAdminStationsList(stations);
+  });
+
+  uRef.on('value', snap => {
+    const users = [];
+    snap.forEach(c => users.push({ id: c.key, ...c.val() }));
+    renderAdminUsersList(users);
+  });
+}
+
+function renderAdminOverview(groups) {
+  const total = groups.length;
+  const atStation = groups.filter(g => g.status === 'at_station').length;
+  const moving = groups.filter(g => g.status === 'moving').length;
+  const done = groups.filter(g => (g.currentRouteIdx||0) >= (g.route||[]).length && (g.route||[]).length>0).length;
+
+  document.getElementById('admin-stats-row').innerHTML = `
+    <div class="stat-mini"><div class="val" style="color:var(--accent)">${total}</div><div class="lbl">กลุ่มทั้งหมด</div></div>
+    <div class="stat-mini"><div class="val" style="color:var(--green)">${atStation}</div><div class="lbl">กำลังเข้าฐาน</div></div>
+    <div class="stat-mini"><div class="val" style="color:var(--gold)">${moving}</div><div class="lbl">เดินทาง</div></div>
+    <div class="stat-mini"><div class="val" style="color:var(--accent2)">${done}</div><div class="lbl">จบแล้ว</div></div>
+  `;
+
+  const container = document.getElementById('admin-all-groups');
+  if (!container) return;
+  container.innerHTML = '';
+  groups.forEach(g => {
+    const route = g.route || [];
+    const idx = g.currentRouteIdx || 0;
+    const pct = route.length > 0 ? Math.round((Math.min(idx,route.length)/route.length)*100) : 0;
+    const memberCount = g.members ? Object.keys(g.members).length : 0;
+    let statusBadge = '<span class="badge badge-moving">🚶 เดินทาง</span>';
+    if (idx >= route.length && route.length > 0) statusBadge = '<span class="badge badge-done">✅ จบแล้ว</span>';
+    else if (g.status === 'at_station') statusBadge = '<span class="badge badge-at-station">🏔️ เข้าฐาน</span>';
+
+    container.innerHTML += `
+      <div class="list-item" style="flex-direction:column;align-items:flex-start;gap:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+          <div><div class="name">${g.id}: ${g.name}</div><div class="sub">👥 ${memberCount} คน · ฐาน ${Math.min(idx,route.length)}/${route.length}</div></div>
+          <div>${statusBadge}</div>
+        </div>
+        <div style="width:100%">
+          <div class="lb-progress-bar"><div class="lb-progress-fill" style="width:${pct}%"></div></div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm" onclick="adminResetGroup('${g.id}')">🔄 Reset</button>
+          <button class="btn btn-red btn-sm" onclick="adminDeleteNode('groups/${g.id}')">🗑️ ลบ</button>
+        </div>
+      </div>
+    `;
+  });
+}
+
+function renderAdminStationsList(stations) {
+  const el = document.getElementById('admin-stations-list');
+  if (!el) return;
+  el.innerHTML = '';
+  stations.forEach(st => {
+    el.innerHTML += `
+      <div class="list-item">
+        <div class="info">
+          <div class="name">${st.emoji||'🏔️'} ${st.id}: ${st.name}</div>
+          <div class="sub">${st.desc||''} · [${st.lat||'?'}, ${st.lng||'?'}]</div>
+        </div>
+        <div class="actions">
+          <button class="btn btn-red btn-sm" onclick="adminDeleteNode('stations/${st.id}')">🗑️</button>
+        </div>
+      </div>
+    `;
+  });
+  if (!stations.length) el.innerHTML = '<p style="color:var(--muted);font-size:0.85rem;text-align:center;padding:16px">ยังไม่มีฐาน</p>';
+}
+
+function renderAdminGroupsList(groups) {
+  const el = document.getElementById('admin-groups-list');
+  if (!el) return;
+  el.innerHTML = '';
+  groups.forEach(g => {
+    const route = (g.route||[]).join(' → ');
+    const memberCount = g.members ? Object.keys(g.members).length : 0;
+    el.innerHTML += `
+      <div class="list-item">
+        <div class="info">
+          <div class="name">${g.id}: ${g.name}</div>
+          <div class="sub">👥 ${memberCount} คน · Route: ${route||'ยังไม่ตั้ง'}</div>
+        </div>
+        <div class="actions">
+          <button class="btn btn-red btn-sm" onclick="adminDeleteNode('groups/${g.id}')">🗑️</button>
+        </div>
+      </div>
+    `;
+  });
+  if (!groups.length) el.innerHTML = '<p style="color:var(--muted);font-size:0.85rem;text-align:center;padding:16px">ยังไม่มีกลุ่ม</p>';
+}
+
+function renderAdminUsersList(users) {
+  const el = document.getElementById('admin-users-list');
+  if (!el) return;
+  el.innerHTML = '';
+  const roleLabel = { admin:'👑 Admin', station_leader:'🏔️ พี่ฐาน', group_leader:'👥 พี่กลุ่ม', student:'🎓 น้อง 69' };
+  users.forEach(u => {
+    el.innerHTML += `
+      <div class="list-item">
+        <div class="info">
+          <div class="name">${u.id} — ${roleLabel[u.role]||u.role}</div>
+          <div class="sub">${u.name||''} ${u.targetId?`· รับผิดชอบ: ${u.targetId}`:''}</div>
+        </div>
+        <div class="actions">
+          <button class="btn btn-red btn-sm" onclick="adminDeleteNode('users/${u.id}')">🗑️</button>
+        </div>
+      </div>
+    `;
+  });
+  if (!users.length) el.innerHTML = '<p style="color:var(--muted);font-size:0.85rem;text-align:center;padding:16px">ยังไม่มีผู้ใช้</p>';
+}
+
+async function adminCreateStation() {
+  const id = document.getElementById('ns-id').value.trim();
+  const name = document.getElementById('ns-name').value.trim();
+  const emoji = document.getElementById('ns-emoji').value.trim() || '🏔️';
+  const lat = document.getElementById('ns-lat').value.trim();
+  const lng = document.getElementById('ns-lng').value.trim();
+  const desc = document.getElementById('ns-desc').value.trim();
+  if (!id || !name) return showModal('แจ้งเตือน','กรอกรหัสและชื่อฐาน');
+  await db.ref(`stations/${id}`).set({ name, emoji, lat: lat||null, lng: lng||null, desc });
+  showModal('✅ สำเร็จ',`สร้างฐาน ${name} แล้ว`);
+  ['ns-id','ns-name','ns-emoji','ns-lat','ns-lng','ns-desc'].forEach(i => document.getElementById(i).value='');
+}
+
+async function adminCreateGroup() {
+  const id = document.getElementById('ng-id').value.trim();
+  const name = document.getElementById('ng-name').value.trim();
+  const routeRaw = document.getElementById('ng-route').value.trim();
+  if (!id || !name) return showModal('แจ้งเตือน','กรอกรหัสและชื่อกลุ่ม');
+  const route = routeRaw ? routeRaw.split(',').map(s=>s.trim()) : [];
+  await db.ref(`groups/${id}`).set({ name, route, currentRouteIdx: 0, status: 'moving' });
+  showModal('✅ สำเร็จ',`สร้างกลุ่ม ${name} แล้ว`);
+  ['ng-id','ng-name','ng-route'].forEach(i => document.getElementById(i).value='');
+}
+
+async function adminSetRole() {
+  const user = document.getElementById('ur-user').value.trim();
+  const role = document.getElementById('ur-role').value;
+  const target = document.getElementById('ur-target').value.trim();
+  if (!user) return showModal('แจ้งเตือน','กรอก Username');
+  const snap = await db.ref(`users/${user}`).once('value');
+  if (!snap.exists()) return showModal('ผิดพลาด','ไม่พบผู้ใช้นี้');
+  await db.ref(`users/${user}`).update({ role, targetId: target || null });
+  showModal('✅ สำเร็จ',`อัปเดต Role ของ ${user} เป็น ${role} แล้ว`);
+}
+
+function adminResetGroup(gId) {
+  showModal('Reset กลุ่ม?',`รีเซ็ตกลุ่ม ${gId} กลับไปฐานแรก?`,`
+    <button class="btn btn-ghost" onclick="closeModal()">ยกเลิก</button>
+    <button class="btn btn-red" onclick="db.ref('groups/${gId}').update({currentRouteIdx:0,status:'moving'});closeModal()">🔄 Reset</button>
+  `);
+}
+
+function adminDeleteNode(path) {
+  showModal('ยืนยันลบ',`ต้องการลบ ${path}?`,`
+    <button class="btn btn-ghost" onclick="closeModal()">ยกเลิก</button>
+    <button class="btn btn-red" onclick="db.ref('${path}').remove();closeModal()">🗑️ ลบ</button>
+  `);
+}
+
+// =======================================
+// LEADERBOARD
+// =======================================
+function showLeaderboard() {
+  showPage('leaderboard');
+  loadLeaderboard();
+}
+function hideLB() {
+  routeUser();
+}
+
+async function loadLeaderboard() {
+  const snap = await db.ref('groups').once('value');
+  const groups = [];
+  snap.forEach(c => groups.push({ id: c.key, ...c.val() }));
+
+  // Sort by progress
+  groups.sort((a,b) => {
+    const pa = (a.currentRouteIdx||0) / Math.max((a.route||[]).length,1);
+    const pb = (b.currentRouteIdx||0) / Math.max((b.route||[]).length,1);
+    return pb - pa;
+  });
+
+  const container = document.getElementById('lb-cards');
+  container.innerHTML = '';
+  const rankEmoji = ['🥇','🥈','🥉'];
+
+  for (let i = 0; i < groups.length; i++) {
+    const g = groups[i];
+    const route = g.route || [];
+    const idx = Math.min(g.currentRouteIdx||0, route.length);
+    const pct = route.length > 0 ? Math.round((idx/route.length)*100) : 0;
+    const memberCount = g.members ? Object.keys(g.members).length : 0;
+    const isDone = idx >= route.length && route.length > 0;
+
+    // Earned stamps
+    let stampsHtml = '';
+    for (let j = 0; j < Math.min(idx, route.length); j++) {
+      const s = await db.ref(`stations/${route[j]}`).once('value');
+      const sdata = s.val() || {};
+      stampsHtml += `<span class="lb-stamp">${sdata.emoji||'🏔️'}</span>`;
+    }
+
+    let statusStr = isDone ? '✅ จบแล้ว!' : (g.status==='at_station'?'🏔️ เข้าฐาน':'🚶 เดินทาง');
+    const rankClass = i < 3 ? `rank-${i+1}` : '';
+    const rankBadge = i < 3 ? rankEmoji[i] : `#${i+1}`;
+
+    container.innerHTML += `
+      <div class="lb-card ${rankClass} fade-in">
+        <div class="lb-rank-badge">${rankBadge}</div>
+        <div class="lb-group-name">กลุ่ม ${g.name}</div>
+        <div style="font-size:0.75rem;color:var(--muted);margin-bottom:6px">${statusStr} · 👥 ${memberCount} คน</div>
+        <div class="lb-progress-bar"><div class="lb-progress-fill" style="width:${pct}%"></div></div>
+        <div class="lb-stats"><span>${idx}/${route.length} ฐาน</span><span>${pct}%</span></div>
+        <div class="lb-stamps">${stampsHtml}</div>
+      </div>
+    `;
+  }
+
+  if (!groups.length) container.innerHTML = '<p style="color:var(--muted);text-align:center;padding:40px;grid-column:1/-1">ยังไม่มีกลุ่ม</p>';
+}
+
+// =======================================
+// ADMIN: CREATE DEFAULT DATA HELPER
+// =======================================
+// (Accessible via browser console: seedTestData())
+window.seedTestData = async () => {
+  const stations = [
+    { id:'ST01', name:'ฐานมังกรเพลิง', emoji:'🐉', lat:'7.0066', lng:'100.4730', desc:'ทดสอบความกล้า' },
+    { id:'ST02', name:'ฐานสายฟ้า', emoji:'⚡', lat:'7.0075', lng:'100.4740', desc:'กิจกรรมทีม' },
+    { id:'ST03', name:'ฐานน้ำใสใจดี', emoji:'🌊', lat:'7.0080', lng:'100.4750', desc:'กิจกรรมน้ำ' },
+    { id:'ST04', name:'ฐานเขาสูง', emoji:'🏔️', lat:'7.0090', lng:'100.4760', desc:'ปีนเขา' },
+  ];
+  for (const s of stations) await db.ref(`stations/${s.id}`).set(s);
+  await db.ref('groups/G01').set({ name:'มังกรเพลิง', route:['ST01','ST02','ST03','ST04'], currentRouteIdx:0, status:'moving' });
+  await db.ref('groups/G02').set({ name:'สายฟ้า', route:['ST02','ST01','ST04','ST03'], currentRouteIdx:0, status:'moving' });
+  console.log('Seed done!');
+};
+</script>
 </body>
 </html>
