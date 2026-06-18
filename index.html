@@ -39,6 +39,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 @keyframes ring-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
 @keyframes spin{to{transform:rotate(360deg)}}
 
+/* EVACUATION OVERLAY */
+@keyframes evac-flash { 0%,100%{background-color:#ef4444} 50%{background-color:#7f1d1d} }
+#evac-overlay{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;background-color:#ef4444;animation:evac-flash 1s infinite;color:#fff;text-align:center;padding:20px}
+#evac-overlay h1{font-size:clamp(2.5rem, 8vw, 4rem);font-weight:900;margin-bottom:10px;text-transform:uppercase;letter-spacing:3px;text-shadow:0 4px 20px rgba(0,0,0,.6)}
+#evac-overlay p{font-size:1.2rem;font-weight:700}
+
 /* NAV */
 #topnav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(7,8,15,.96);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:56px}
 #topnav .logo{font-size:1.05rem;font-weight:900;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
@@ -203,8 +209,13 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 </head>
 <body>
 <audio id="remote-audio" autoplay playsinline></audio>
+<audio id="evac-audio" src="emergency.mp3" loop preload="auto"></audio>
 
-<!-- ==================== SOS ADMIN BANNER ==================== -->
+<div id="evac-overlay" class="hidden">
+  <h1>🚨 อพยพฉุกเฉิน 🚨</h1>
+  <p>กรุณาทิ้งสัมภาระและออกจากพื้นที่ไปยังจุดรวมพลทันที!</p>
+</div>
+
 <div id="sos-admin-banner" class="hidden">
   <div class="sos-left">
     <div>🚨 <b>ฉุกเฉิน:</b> <span id="sos-text"></span></div>
@@ -213,7 +224,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
   <button class="sos-ack-btn" onclick="clearSOS()">✓ รับเรื่องแล้ว</button>
 </div>
 
-<!-- ==================== INCOMING CALL ==================== -->
 <div id="call-incoming-overlay" class="hidden">
   <div id="call-incoming-box">
     <div class="caller-avatar">📞</div>
@@ -226,7 +236,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
   </div>
 </div>
 
-<!-- ==================== ACTIVE CALL OVERLAY ==================== -->
 <div id="active-call-overlay" class="hidden">
   <div class="peer-name" id="active-call-peer">-</div>
   <div class="call-timer" id="call-timer-display">กำลังเชื่อมต่อ...</div>
@@ -238,7 +247,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
   </div>
 </div>
 
-<!-- ==================== COMMS FAB ==================== -->
 <div id="comms-fab" class="hidden" onclick="toggleComms()">📞 ติดต่อ / SOS</div>
 <div id="comms-panel" class="hidden">
   <button class="btn btn-red" id="sos-btn" onclick="triggerSOS()" style="margin-bottom:12px">
@@ -266,7 +274,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
   </div>
 </div>
 
-<!-- ==================== TOP NAV ==================== -->
 <nav id="topnav">
   <div class="logo">🏕️ Freshy In '69</div>
   <div class="nav-right">
@@ -278,7 +285,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 
 <div id="app">
 
-<!-- ==================== LOGIN ==================== -->
 <div id="page-login" class="page fade-in">
   <div style="text-align:center;padding:48px 0 32px">
     <div style="font-size:2.6rem;font-weight:900;line-height:1;background:linear-gradient(135deg,#f59e0b,#ef4444,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent">FRESHY IN</div>
@@ -305,7 +311,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
   </div>
 </div>
 
-<!-- ==================== STUDENT ==================== -->
 <div id="page-student" class="page hidden fade-in">
   <div class="section-header"><h2 id="st-name">-</h2><p id="st-group-label">กำลังโหลด...</p></div>
   <div id="st-nogroup" class="hidden card" style="text-align:center;padding:30px">
@@ -333,7 +338,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
   </div>
 </div>
 
-<!-- ==================== GROUP LEADER ==================== -->
 <div id="page-group" class="page hidden fade-in">
   <div class="section-header"><h2 id="gl-name">กลุ่ม</h2><p id="gl-sub">พี่กลุ่ม</p></div>
   <div class="stats-row" style="grid-template-columns:1fr 1fr">
@@ -358,7 +362,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
   <div class="card"><div class="card-title" style="margin-bottom:12px">👥 น้องในกลุ่ม</div><div id="gl-members-list"></div></div>
 </div>
 
-<!-- ==================== STATION LEADER ==================== -->
 <div id="page-station" class="page hidden fade-in">
   <div class="section-header"><h2 id="sl-name">ชื่อฐาน</h2><p id="sl-id">รหัสฐาน</p></div>
   <div class="card" style="text-align:center">
@@ -373,7 +376,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
   <div class="card" style="border-color:var(--orange)"><div class="card-title" style="color:var(--orange);margin-bottom:12px">🔜 กำลังเดินทางมา</div><div id="sl-groups-incoming"></div></div>
 </div>
 
-<!-- ==================== ADMIN ==================== -->
 <div id="page-admin" class="page wide hidden fade-in">
   <div class="section-header"><h2>⚙️ Admin Panel</h2><p>จัดการระบบแบบครบวงจร</p></div>
   <div class="admin-tabs">
@@ -384,6 +386,18 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
     <button class="admin-tab" onclick="adminTab('history')" style="color:var(--red);border-color:rgba(239,68,68,.5)">🚨 ประวัติ</button>
   </div>
   <div id="admin-overview">
+    
+    <div class="card" style="border-color:var(--red);box-shadow:0 0 15px rgba(239,68,68,0.2);">
+      <div class="card-title" style="color:var(--red)">🚨 ระบบสั่งการอพยพฉุกเฉิน</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div id="admin-evac-status" style="font-weight:900;font-size:1.2rem;color:var(--green)">🟢 สถานะปกติ</div>
+        <div style="display:flex;gap:8px">
+          <button id="btn-start-evac" class="btn btn-red btn-sm" onclick="toggleEvacuation(true)">🚨 สั่งอพยพ</button>
+          <button id="btn-stop-evac" class="btn btn-ghost btn-sm hidden" onclick="toggleEvacuation(false)">✅ ยกเลิกอพยพ</button>
+        </div>
+      </div>
+    </div>
+
     <div id="admin-stats-row" class="stats-row" style="grid-template-columns:repeat(4,1fr)"></div>
     <div class="card"><div class="card-title" style="margin-bottom:12px">สถานะทุกกลุ่ม</div><div id="admin-all-groups"></div></div>
   </div>
@@ -450,7 +464,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
   </div>
 </div>
 
-<!-- ==================== LEADERBOARD ==================== -->
 <div id="page-leaderboard" class="lb-bg hidden fade-in" style="max-width:none">
   <div class="lb-header">
     <div class="lb-title">🏆 LEADERBOARD</div>
@@ -462,10 +475,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
   </div>
 </div>
 
-</div><!-- #app -->
-
-<!-- ==================== MODALS ==================== -->
-<div id="scanner-modal" class="hidden">
+</div><div id="scanner-modal" class="hidden">
   <div id="scanner-header">
     <span style="color:#fff;font-weight:900;font-size:.9rem">📷 สแกน QR Code</span>
     <button onclick="stopScanner()" style="background:var(--red);color:#fff;border:none;border-radius:8px;padding:7px 16px;font-weight:800;cursor:pointer">✕ ปิด</button>
@@ -514,6 +524,7 @@ let chatListenerRef = null;
 let lastMsgCount = 0;
 let callTimerInterval = null;
 let callStartTime = null;
+let evacListenerRef = null;
 
 // =============================================================
 // AUDIO ENGINE — Web Audio API
@@ -714,6 +725,13 @@ function logout() {
   if (myPeer) { try { myPeer.destroy(); } catch(e){} myPeer = null; }
   if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
   if (chatListenerRef) { chatListenerRef.off(); chatListenerRef = null; }
+  
+  // ปิดระบบแจ้งเตือนเมื่อออกจากระบบ
+  if (evacListenerRef) { evacListenerRef.off(); evacListenerRef = null; }
+  const evacAudio = document.getElementById('evac-audio');
+  evacAudio.pause(); evacAudio.currentTime = 0;
+  document.getElementById('evac-overlay').classList.add('hidden');
+
   localStorage.removeItem('freshy69_user');
   currentUser = null;
   document.getElementById('comms-fab').classList.add('hidden');
@@ -732,6 +750,9 @@ function routeUser() {
   chip.textContent = currentUser.name || currentUser.username;
   chip.classList.remove('hidden');
   document.getElementById('nav-logout').classList.remove('hidden');
+
+  // ดักฟังคำสั่งอพยพทันทีที่เข้าระบบเสร็จ
+  initEvacuationListener();
 
   if (currentUser.role === 'admin') {
     document.getElementById('nav-lb').classList.remove('hidden');
@@ -789,6 +810,69 @@ function updateMap(prefix, stData) {
   } else {
     placeholder.classList.remove('hidden'); iframe.src = '';
     if (navBtn) navBtn.classList.add('hidden');
+  }
+}
+
+// =============================================================
+// EVACUATION SYSTEM
+// =============================================================
+function initEvacuationListener() {
+  if (evacListenerRef) evacListenerRef.off();
+  evacListenerRef = db.ref('system/evacuation');
+  activeListeners.push(evacListenerRef);
+  
+  evacListenerRef.on('value', snap => {
+    const data = snap.val() || { active: false };
+    const isActive = data.active === true;
+    const evacAudio = document.getElementById('evac-audio');
+    const overlay = document.getElementById('evac-overlay');
+
+    if (currentUser.role === 'admin') {
+      // ฝั่ง Admin อัปเดตเฉพาะแผงควบคุม
+      const statusEl = document.getElementById('admin-evac-status');
+      const btnStart = document.getElementById('btn-start-evac');
+      const btnStop = document.getElementById('btn-stop-evac');
+      
+      if (isActive) {
+        if(statusEl) statusEl.innerHTML = '<span style="color:var(--red); animation:sos-flash 1s infinite">🔴 กำลังอพยพ!</span>';
+        if(btnStart) btnStart.classList.add('hidden');
+        if(btnStop) btnStop.classList.remove('hidden');
+      } else {
+        if(statusEl) statusEl.innerHTML = '🟢 สถานะปกติ';
+        if(btnStart) btnStart.classList.remove('hidden');
+        if(btnStop) btnStop.classList.add('hidden');
+      }
+      
+      // Admin ไม่โดนปิดจอ แต่อาจจะต้องซ่อน overlay หากเคยเด้ง
+      overlay.classList.add('hidden');
+      evacAudio.pause();
+      
+    } else {
+      // ฝั่งผู้ใช้อื่นๆ เปิด Popup และเล่นเสียงเตือนภัย
+      if (isActive) {
+        overlay.classList.remove('hidden');
+        evacAudio.play().catch(e => console.warn('Browser blocked autoplay:', e));
+      } else {
+        overlay.classList.add('hidden');
+        evacAudio.pause();
+        evacAudio.currentTime = 0; // รีเซ็ตเสียงกลับไปที่ 0
+      }
+    }
+  });
+}
+
+async function toggleEvacuation(active) {
+  const msg = active 
+    ? "⚠️ ยืนยันการสั่ง 'อพยพฉุกเฉิน'? \nผู้ใช้ทุกคนจะถูกระงับการใช้งานและได้ยินเสียงเตือนทันที!" 
+    : "✅ ยืนยันการ 'ยกเลิกอพยพ'? \nระบบจะกลับเข้าสู่สถานะปกติ";
+    
+  if (confirm(msg)) {
+    await db.ref('system/evacuation').set({ 
+      active: active, 
+      timestamp: Date.now(), 
+      triggeredBy: currentUser.username 
+    });
+    showToast(active ? '🚨 ส่งคำสั่งอพยพแล้ว!' : '✅ ยกเลิกอพยพเรียบร้อย', active ? 'var(--red)' : 'var(--green)');
   }
 }
 
@@ -1018,7 +1102,7 @@ function endChatSession() {
 }
 
 function escapeHtml(str) {
-  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return str.replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>');
 }
 
 // =============================================================
@@ -1148,7 +1232,6 @@ function initStation() {
   if (!stId) return showModal('แจ้งเตือน','คุณยังไม่ได้รับมอบหมายฐาน ติดต่อ Admin');
   document.getElementById('sl-id').textContent = `รหัสฐาน: ${stId}`;
   
-  // ล้าง QR Code เดิมทิ้งก่อนสร้างใหม่ (แก้บั๊กโชว์ QR ของบัญชีเก่าค้าง)
   document.getElementById('sl-qrcode').innerHTML = '';
   new QRCode(document.getElementById('sl-qrcode'), { 
     text: `STATION:${stId}`, 
@@ -1235,7 +1318,6 @@ function initAdmin() {
 
   gRef.on('value', snap => {
     adminState.groups = [];
-    // ✅ FIX BUG: ใส่ปีกกา {} ครอบคำสั่งเพื่อไม่ให้ .push() ไป break ลูป forEach
     snap.forEach(c => { adminState.groups.push({ id: c.key, ...c.val() }); });
     renderAdminOverview(adminState.groups);
     renderAdminGroupsList(adminState.groups, adminState.users);
@@ -1244,7 +1326,6 @@ function initAdmin() {
 
   stRef.on('value', snap => {
     adminState.stations = [];
-    // ✅ FIX BUG: ใส่ปีกกา {} ครอบคำสั่งเพื่อไม่ให้ .push() ไป break ลูป forEach
     snap.forEach(c => { adminState.stations.push({ id: c.key, ...c.val() }); });
     renderAdminStationsList(adminState.stations, adminState.users);
   });
@@ -1391,7 +1472,7 @@ function adminDeleteNode(path) { if (confirm(`ยืนยันลบ ${path}?`
 // =============================================================
 // QR SCANNER
 // =============================================================
-let isProcessingScan = false; // Flag ป้องกันกล้องสแกนรัวแล้วรัน DB เบิ้ล
+let isProcessingScan = false;
 
 function startScanner(m) {
   scannerMode = m;
@@ -1419,7 +1500,6 @@ function stopScanner() {
 }
 
 async function handleScan(txt) {
-  // ใส่ .trim() ตัดช่องว่างหลอกตาที่มักติดมากับ Hardware กล้อง
   const scannedText = txt.trim(); 
   
   if (scannerMode === 'join_group' && scannedText.startsWith('JOIN_GROUP:')) {
@@ -1465,7 +1545,6 @@ function hideLB() { routeUser(); }
 async function loadLeaderboard() {
   const snap = await db.ref('groups').once('value');
   const groups = [];
-  // ✅ FIX BUG: ใส่ปีกกา {} ครอบคำสั่งเพื่อไม่ให้ .push() ไป break ลูป forEach
   snap.forEach(c => { groups.push({ id: c.key, ...c.val() }); });
   groups.sort((a, b) => {
     const ar = (a.route||[]).length; const br = (b.route||[]).length;
