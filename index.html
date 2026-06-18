@@ -1147,17 +1147,27 @@ function initStation() {
   const stId = currentUser.targetId;
   if (!stId) return showModal('แจ้งเตือน','คุณยังไม่ได้รับมอบหมายฐาน ติดต่อ Admin');
   document.getElementById('sl-id').textContent = `รหัสฐาน: ${stId}`;
-  if (document.getElementById('sl-qrcode').children.length === 0) {
-    new QRCode(document.getElementById('sl-qrcode'), { text: `STATION:${stId}`, width: 180, height: 180, correctLevel: QRCode.CorrectLevel.M });
-  }
-  const stRef = db.ref(`stations/${stId}`); activeListeners.push(stRef);
+  
+  // ล้าง QR Code เดิมทิ้งก่อนสร้างใหม่ (แก้บั๊กโชว์ QR ของบัญชีเก่าค้าง)
+  document.getElementById('sl-qrcode').innerHTML = '';
+  new QRCode(document.getElementById('sl-qrcode'), { 
+    text: `STATION:${stId}`, 
+    width: 180, 
+    height: 180, 
+    correctLevel: QRCode.CorrectLevel.M 
+  });
+
+  const stRef = db.ref(`stations/${stId}`); 
+  activeListeners.push(stRef);
   stRef.on('value', snap => {
     if (snap.exists()) {
       document.getElementById('sl-name').textContent = `${snap.val().emoji || '🏔️'} ${snap.val().name}`;
       updateMap('sl', snap.val());
     }
   });
-  const gRef = db.ref('groups'); activeListeners.push(gRef);
+
+  const gRef = db.ref('groups'); 
+  activeListeners.push(gRef);
   gRef.on('value', snap => {
     const hereBox = document.getElementById('sl-groups-here'); 
     const inBox = document.getElementById('sl-groups-incoming'); 
@@ -1381,14 +1391,22 @@ function adminDeleteNode(path) { if (confirm(`ยืนยันลบ ${path}?`
 // =============================================================
 // QR SCANNER
 // =============================================================
+let isProcessingScan = false; // Flag ป้องกันกล้องสแกนรัวแล้วรัน DB เบิ้ล
+
 function startScanner(m) {
   scannerMode = m;
+  isProcessingScan = false;
   document.getElementById('scanner-modal').classList.remove('hidden');
   html5QrCode = new Html5Qrcode('qr-reader');
   html5QrCode.start(
     { facingMode: 'environment' },
     { fps: 10, qrbox: 250 },
-    res => { stopScanner(); handleScan(res); }
+    res => { 
+      if (isProcessingScan) return;
+      isProcessingScan = true;
+      stopScanner(); 
+      handleScan(res); 
+    }
   ).catch(() => showToast('ไม่สามารถใช้กล้องได้', 'var(--red)'));
 }
 
@@ -1401,20 +1419,29 @@ function stopScanner() {
 }
 
 async function handleScan(txt) {
-  if (scannerMode === 'join_group' && txt.startsWith('JOIN_GROUP:')) {
-    const gid = txt.split(':')[1];
+  // ใส่ .trim() ตัดช่องว่างหลอกตาที่มักติดมากับ Hardware กล้อง
+  const scannedText = txt.trim(); 
+  
+  if (scannerMode === 'join_group' && scannedText.startsWith('JOIN_GROUP:')) {
+    const gid = scannedText.split(':')[1].trim();
     await db.ref(`users/${currentUser.username}`).update({ targetId: gid });
     await db.ref(`groups/${gid}/members/${currentUser.username}`).set({ name: currentUser.name });
     currentUser.targetId = gid;
     setupSession(currentUser);
     showToast(`✅ เข้าร่วมกลุ่ม ${gid} แล้ว`);
-  } else if (scannerMode === 'checkin_station' && txt.startsWith('STATION:')) {
-    const stId = txt.split(':')[1];
+  } else if (scannerMode === 'checkin_station' && scannedText.startsWith('STATION:')) {
+    const stId = scannedText.split(':')[1].trim();
     const g = (await db.ref(`groups/${currentUser.targetId}`).once('value')).val();
+    
     if (!g) return showToast('ไม่พบข้อมูลกลุ่ม', 'var(--red)');
     if (g.status === 'at_station') return showToast('อยู่ในฐานนี้แล้ว', 'var(--orange)');
-    const route = g.route || []; const idx = g.currentRouteIdx || 0;
+    
+    const route = g.route || []; 
+    const idx = g.currentRouteIdx || 0;
+    
+    if (idx >= route.length) return showToast('กิจกรรมของกลุ่มนี้จบแล้ว', 'var(--red)');
     if (route[idx] !== stId) return showToast(`ผิดฐาน! ควรไปฐาน ${route[idx]}`, 'var(--red)');
+    
     await db.ref(`groups/${currentUser.targetId}`).update({ status: 'at_station' });
     showToast('✅ เช็คอินฐานสำเร็จ! พี่ฐานได้รับแจ้งแล้ว');
   } else {
